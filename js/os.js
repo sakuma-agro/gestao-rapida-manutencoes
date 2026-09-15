@@ -120,8 +120,9 @@ function proximaTroca(c, { curto = false } = {}) {
    máquina, uma coluna por item de manutenção, e em cada cruzamento as
    horas restantes com o status. Clicar na célula marca para a OS. */
 
-const MODOS = { quadro: 'Consolidado', cartoes: 'Cartões', lista: 'Lista' };
-let modoPainel = 'quadro';
+const MODOS = { planilha: 'Planilha', quadro: 'Consolidado', cartoes: 'Cartões', lista: 'Lista' };
+let modoPainel = 'planilha';
+let itemPainel = '';            // '' = todos os itens, como na planilha
 const marcados = new Set();
 
 TELAS.vencimentos = el => {
@@ -141,7 +142,14 @@ TELAS.vencimentos = el => {
       <select id="pv-local"><option value="">Todos os locais</option>
         ${q.ordenado('locais').map(l => `<option value="${esc(l.id)}">${esc(l.nome)}</option>`).join('')}
       </select>
+      <!-- Na planilha os itens ficam lado a lado e o Guilherme rola para a
+           direita. Aqui ele também pode isolar um item só. -->
+      <select id="pv-item"><option value="">Todos os itens</option>
+        ${q.ordenado('tipos_manutencao', 'ordem').map(t =>
+          `<option value="${esc(t.id)}">${esc(t.nome)}</option>`).join('')}
+      </select>
       <select id="pv-modo">
+        <option value="planilha">Planilha — última e próxima troca</option>
         <option value="quadro">Consolidado — tudo numa tela</option>
         <option value="cartoes">Cartões por máquina</option>
         <option value="lista">Lista detalhada</option>
@@ -157,9 +165,11 @@ TELAS.vencimentos = el => {
     <div id="pv-lista"></div>`;
 
   $('#pv-modo').value = modoPainel;
+  $('#pv-item').value = itemPainel;
   ['pv-busca','pv-status','pv-local'].forEach(id => {
     const e = document.getElementById(id); e.oninput = desenharPainel; e.onchange = desenharPainel;
   });
+  $('#pv-item').onchange = () => { itemPainel = $('#pv-item').value; desenharPainel(); };
   $('#pv-modo').onchange = () => { modoPainel = $('#pv-modo').value; desenharPainel(); };
   $('#pv-limpar').onclick = () => { marcados.clear(); desenharPainel(); };
   $('#pv-gerar').onclick = () => gerarOS([...marcados]);
@@ -205,6 +215,7 @@ function desenharPainel() {
   const usados = new Set(todos.map(x => x.plano.tipo_manutencao_id));
   const colunas = q.ordenado('tipos_manutencao', 'ordem')
     .filter(t => usados.has(t.id))
+    .filter(t => !itemPainel || t.id === itemPainel)
     .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 
   let linhas = [...porMaquina.values()].map(m => {
@@ -227,11 +238,12 @@ function desenharPainel() {
 
   /* No consolidado a tabela é o assunto: o texto de apoio e os quatro cartões
      encolhem para a frota inteira caber na primeira tela. */
-  document.body.classList.toggle('modo-quadro', modoPainel === 'quadro');
+  document.body.classList.toggle('modo-quadro', modoPainel === 'quadro' || modoPainel === 'planilha');
 
   $('#pv-lista').innerHTML = linhas.length === 0
     ? '<div class="vazio"><p>Nada com esses filtros.</p></div>'
-    : (modoPainel === 'cartoes' ? cartoes(linhas)
+    : (modoPainel === 'planilha' ? planilha(linhas, colunas)
+      : modoPainel === 'cartoes' ? cartoes(linhas)
       : modoPainel === 'quadro' ? quadro(linhas, colunas) : listaDetalhada(linhas));
 
   ajustarAltura();
@@ -239,10 +251,15 @@ function desenharPainel() {
   $('#pv-lista').querySelectorAll('[data-plano]').forEach(c => {
     const alterna = () => {
       const id = c.dataset.plano;
-      marcados.has(id) ? marcados.delete(id) : marcados.add(id);
-      c.classList.toggle('marcada');
-      const rot = c.querySelector('.it-marcar');
-      if (rot) rot.textContent = marcados.has(id) ? 'marcado para a OS' : 'marcar';
+      const ligar = !marcados.has(id);
+      ligar ? marcados.add(id) : marcados.delete(id);
+      /* Na planilha o item ocupa seis células; todas acendem juntas, senão
+         clicar na segunda desmarcaria o que a primeira acabou de marcar. */
+      $('#pv-lista').querySelectorAll('[data-plano="' + CSS.escape(id) + '"]').forEach(alvo => {
+        alvo.classList.toggle('marcada', ligar);
+        const rot = alvo.querySelector('.it-marcar');
+        if (rot) rot.textContent = ligar ? 'marcado para a OS' : 'marcar';
+      });
       botaoGerar();
     };
     c.onclick = alterna;
@@ -356,10 +373,86 @@ function cartoes(linhas) {
     }).join('') + '</div>';
 }
 
+/* ------------------------------------------------------------- planilha
+
+   O desenho da "NOVO Controle_Troca_Oleo", que é como o Guilherme lê a frota
+   há anos: uma linha por máquina e, para cada item de manutenção, um bloco de
+   seis colunas — DATA ÚLTIMA, HR ÚLTIMA (o que já foi feito) e HR DA PRÓXIMA,
+   HR PARA TROCAR, DATA DA PRÓXIMA, STATUS (o que vem). O código e a descrição
+   ficam grudados à esquerda e os blocos correm para a direita, exatamente como
+   na planilha. Número negativo entre parênteses, como o Excel dele mostra. */
+
+/* Número no formato contábil da planilha: negativo entre parênteses. */
+function nContabil(v) {
+  if (v === null || v === undefined || Number.isNaN(Number(v))) return '—';
+  const n = Number(v);
+  return n < 0 ? '(' + nHoras(Math.abs(n)) + ')' : nHoras(n);
+}
+
+function planilha(linhas, colunas) {
+  const cabTipo = colunas.map(t =>
+    `<th class="bl-tipo" colspan="6">${esc(t.nome)}</th>`).join('');
+  const cabGrupo = colunas.map(() =>
+    `<th class="bl-ult" colspan="2">ÚLTIMA TROCA</th>
+     <th class="bl-prox" colspan="4">PRÓXIMA TROCA</th>`).join('');
+  const cabCampo = colunas.map(() =>
+    `<th class="bl-ult">DATA ÚLTIMA</th><th class="bl-ult num">HR ÚLTIMA</th>
+     <th class="num">HR DA PRÓXIMA</th><th class="num">HR PARA TROCAR</th>
+     <th>DATA DA PRÓXIMA</th><th>STATUS</th>`).join('');
+
+  return `<p class="sub">${linhas.length}
+      ${linhas.length === 1 ? 'máquina' : 'máquinas e implementos'} ·
+      role para o lado para ver os outros itens · toque no bloco para marcar</p>
+    <div class="rolagem"><table class="tabela pl"><thead>
+      <tr><th class="col-cod" rowspan="3">COD</th>
+          <th class="col-maq" rowspan="3">DESCRIÇÃO</th>
+          <th class="num agora" rowspan="3">AGORA</th>${cabTipo}</tr>
+      <tr>${cabGrupo}</tr>
+      <tr class="campos">${cabCampo}</tr>
+    </thead><tbody>` + linhas.map(m => {
+      const e = m.equipamento, u = unidadeDe(e);
+      return `<tr>
+        <td class="col-cod codigo">${esc(e.codigo)}</td>
+        <td class="col-maq">${esc(e.descricao)}<small>${esc(q.nome('locais', e.local_id))}</small></td>
+        <td class="num agora">${leituraDe(e) == null ? '—' : nHoras(leituraDe(e))}<small>${u}</small></td>
+        ${colunas.map(t => {
+          const x = m.itens[t.id];
+          if (!x) return '<td class="pl-vazia" colspan="6">—</td>';
+          const c = x.c, p = x.plano;
+          const [cls, txt] = ETIQUETA[c.status] || ETIQUETA.SEM_DADO;
+          const marca = marcados.has(p.id) ? ' marcada' : '';
+          const dado = `data-plano="${esc(p.id)}" tabindex="0" role="button"`;
+          return `
+            <td class="pl-ult${marca}" ${dado}>${p.ultima_troca_data ? formatarData(p.ultima_troca_data) : '—'}</td>
+            <td class="pl-ult num${marca}" ${dado}>${nHoras(p.ultima_troca_leitura)}</td>
+            <td class="num${marca}" ${dado}>${c.proximo_hr == null ? '—' : nHoras(c.proximo_hr)}</td>
+            <td class="num falta${c.horas_restantes != null && c.horas_restantes < 0 ? ' neg' : ''}${marca}" ${dado}
+               >${nContabil(c.horas_restantes)}</td>
+            <td class="num${marca}" ${dado}>${c.proxima_data ? formatarData(c.proxima_data) : '—'}</td>
+            <td class="pl-status st-${cls}${marca}" ${dado}
+                title="${esc(q.nome('tipos_manutencao', t.id))} · ${esc(c.motivo)}">${txt}</td>`;
+        }).join('')}
+      </tr>`;
+    }).join('') + '</tbody></table></div>';
+}
+
 /* A altura da tabela é medida, não chutada: ela ocupa o que sobra entre o fim
    dos filtros e o rodapé fixo. Assim a frota inteira rola dentro do quadro e a
    página em si não rola — que é o que "tudo numa tela" quer dizer. */
+/* As três colunas de identificação ficam grudadas à esquerda. Como a descrição
+   da máquina não tem largura fixa, o deslocamento de cada uma é medido depois
+   de desenhar — chutar o número escondia a coluna DATA ÚLTIMA por baixo. */
+function grudarColunas() {
+  const t = document.querySelector('#pv-lista table.pl');
+  const tr = t && t.tBodies[0] && t.tBodies[0].rows[0];
+  if (!tr || tr.cells.length < 3) return;
+  const l1 = tr.cells[0].offsetWidth;
+  t.style.setProperty('--l1', l1 + 'px');
+  t.style.setProperty('--l2', (l1 + tr.cells[1].offsetWidth) + 'px');
+}
+
 function ajustarAltura() {
+  grudarColunas();
   const cx = document.querySelector('#pv-lista .rolagem');
   if (!cx) return;
   const rodape = document.querySelector('.rodape');
