@@ -260,20 +260,53 @@ legend{padding:0 8px;font-weight:bold;font-size:14px;color:var(--marrom)}
 
 @media(prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
 
-/* ---------- quadro de vencimentos (formato da planilha) ---------- */
-.rolagem{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.quadro{min-width:900px}
-.quadro th{font-size:12px;padding:8px 6px;vertical-align:bottom}
-.quadro td{padding:6px 8px;font-size:14px}
-.quadro .cel{text-align:center;cursor:pointer;user-select:none;min-width:96px;
-  border-left:1px solid var(--linha);line-height:1.25}
-.quadro .cel strong{display:block;font-size:15px}
-.quadro .cel span{display:block;font-size:10px;letter-spacing:.03em;font-weight:bold}
-.quadro .cel em{display:block;font-size:10px;font-style:normal;color:var(--marrom)}
+/* ---------- quadro consolidado ----------
+   Toda a frota numa tela: uma linha por máquina ou implemento, uma coluna por
+   item de manutenção. Em cada cruzamento, o que ele quer ver de relance é a
+   MARCA DA PRÓXIMA TROCA; embaixo, em letra miúda, a situação e quanto falta.
+   A cor diz o estado e a palavra repete — cor sozinha não conta a ninguém.
+   O cabeçalho e as duas primeiras colunas ficam grudados: dá para rolar 40
+   máquinas e 6 itens sem perder de vista quem é quem. */
+.rolagem{overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:calc(100vh - 210px)}
+.quadro{min-width:900px;border-collapse:separate;border-spacing:0}
+.quadro th{
+  font-size:11.5px;padding:7px 6px;vertical-align:bottom;text-align:center;
+  position:sticky;top:0;z-index:3;
+}
+.quadro thead th.col-cod{left:0;z-index:5}
+.quadro thead th.col-maq{left:64px;z-index:5;text-align:left}
+.quadro td{padding:5px 8px;font-size:13.5px;border-top:1px solid var(--linha)}
+.quadro tbody tr:hover td{background:#FAFBF7}
+
+/* as duas colunas de identificação acompanham a rolagem lateral.
+   O fundo branco vale só no corpo: no cabeçalho elas continuam verdes, senão
+   o texto branco do cabeçalho some no branco. */
+.quadro .col-cod{position:sticky;left:0;z-index:2;width:64px}
+.quadro .col-maq{position:sticky;left:64px;z-index:2;min-width:210px;line-height:1.2}
+.quadro tbody .col-cod,
+.quadro tbody .col-maq{background:var(--branco)}
+.quadro thead .col-cod,
+.quadro thead .col-maq{background:var(--verde)}
+.quadro tbody tr:hover .col-cod,
+.quadro tbody tr:hover .col-maq{background:#FAFBF7}
+.quadro .col-maq small{display:block;font-size:11px;color:var(--cinza-claro)}
+.quadro .agora{white-space:nowrap;font-weight:bold;color:var(--cinza)}
+.quadro .agora small{font-weight:normal;color:var(--cinza-claro);font-size:11px;margin-left:3px}
+
+.quadro .cel{
+  text-align:center;cursor:pointer;user-select:none;min-width:104px;
+  border-left:1px solid var(--linha);line-height:1.25;
+}
+/* a marca da próxima troca é o que salta */
+.quadro .cel strong{display:block;font-size:14px;font-weight:bold}
+.quadro .cel span{display:block;font-size:10px;letter-spacing:.02em}
+.quadro .cel i{font-style:normal;color:var(--marrom);font-weight:bold;margin-left:2px}
 .quadro .cel.vazia{color:var(--linha);cursor:default;background:#FCFCFA}
-/* A marca da próxima troca: em que horímetro (ou data) a máquina volta para a
-   oficina. Fica discreta dentro da célula — o que salta é quanto falta. */
-.quadro .cel i{display:block;font-size:10px;font-style:normal;color:var(--cinza-claro);margin-top:1px}
+
+/* legenda: a cor sozinha não explica nada para quem chega agora */
+.legenda{display:flex;flex-wrap:wrap;gap:6px 10px;margin:0 0 10px;font-size:11.5px}
+.legenda .lg{padding:2px 9px;border-radius:12px;border:1px solid var(--linha)}
+.legenda .lg-pe{color:var(--marrom);font-weight:bold;padding:2px 0}
 .tabela .prox strong{color:var(--marrom)}
 .tabela .prox span{font-size:12.5px;color:var(--cinza-claro)}
 .cel.st-urgente{background:#FBE9E7;color:var(--urgente)}
@@ -282,6 +315,17 @@ legend{padding:0 8px;font-weight:bold;font-size:14px;color:var(--marrom)}
 .cel.st-ok{background:#F1F7EA;color:var(--ok)}
 .cel.st-neutro{background:#F7F7F5;color:var(--cinza-claro)}
 .cel.marcada{outline:3px solid var(--verde);outline-offset:-3px;font-weight:bold}
+.legenda .lg.st-urgente{background:#FBE9E7;color:var(--urgente);border-color:#F3C9C3}
+.legenda .lg.st-vencido{background:#FDF0E3;color:var(--vencido);border-color:#F0D6B8}
+.legenda .lg.st-atencao{background:#FFF8E1;color:#8A6400;border-color:#EFDFA8}
+.legenda .lg.st-ok{background:#F1F7EA;color:var(--ok);border-color:#D4E5C0}
+.legenda .lg.st-neutro{background:#F7F7F5;color:var(--cinza-claro)}
+
+@media (max-width:640px){
+  .rolagem{max-height:calc(100vh - 170px)}
+  .quadro .col-maq{min-width:150px}
+  .quadro .cel{min-width:96px}
+}
 tr.cel{cursor:pointer}
 tr.cel.marcada td{background:#F1F7EA}
 
