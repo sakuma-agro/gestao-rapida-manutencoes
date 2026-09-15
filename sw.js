@@ -25,7 +25,6 @@ const ARQUIVOS = [
   './icons/favicon-gr.v1.ico',
   './img/sakuma-logo.png',
   './img/sakuma-marca-vertical.png',
-  './img/lop-marca.png',
   './img/lop-assinatura-laser-claro.png',
   './img/lop-assinatura-laser-escuro.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js'
