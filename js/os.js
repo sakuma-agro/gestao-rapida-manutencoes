@@ -120,8 +120,8 @@ function proximaTroca(c, { curto = false } = {}) {
    máquina, uma coluna por item de manutenção, e em cada cruzamento as
    horas restantes com o status. Clicar na célula marca para a OS. */
 
-const MODOS = { cartoes: 'Cartões', quadro: 'Quadro', lista: 'Lista' };
-let modoPainel = 'cartoes';
+const MODOS = { quadro: 'Consolidado', cartoes: 'Cartões', lista: 'Lista' };
+let modoPainel = 'quadro';
 const marcados = new Set();
 
 TELAS.vencimentos = el => {
@@ -142,8 +142,8 @@ TELAS.vencimentos = el => {
         ${q.ordenado('locais').map(l => `<option value="${esc(l.id)}">${esc(l.nome)}</option>`).join('')}
       </select>
       <select id="pv-modo">
+        <option value="quadro">Consolidado — tudo numa tela</option>
         <option value="cartoes">Cartões por máquina</option>
-        <option value="quadro">Quadro da planilha</option>
         <option value="lista">Lista detalhada</option>
       </select>
     </div>
@@ -347,34 +347,41 @@ function cartoes(linhas) {
 }
 
 function quadro(linhas, colunas) {
-  const cab = colunas.map(t => `<th class="num">${esc(t.nome)}</th>`).join('');
-  return `<p class="sub">${linhas.length} ${linhas.length === 1 ? 'máquina' : 'máquinas'} ·
-      clique na célula para marcar o item</p>
+  const cab = colunas.map(t => `<th>${esc(t.nome)}</th>`).join('');
+  return `<p class="sub">${linhas.length} ${linhas.length === 1 ? 'máquina' : 'máquinas e implementos'} ·
+      a marca em destaque é o horímetro da próxima troca · toque na célula para marcar</p>
+    <div class="legenda">
+      <span class="lg st-urgente">trocar urgente</span>
+      <span class="lg st-vencido">período vencido</span>
+      <span class="lg st-atencao">atenção</span>
+      <span class="lg st-ok">em dia</span>
+      <span class="lg st-neutro">sem última troca</span>
+      <span class="lg-pe">• sem peça cadastrada</span>
+    </div>
     <div class="rolagem"><table class="tabela quadro"><thead><tr>
-      <th>Código</th><th>Máquina / equipamento</th><th class="num">Leitura</th>
-      ${cab}<th class="num">Urgentes</th>
+      <th class="col-cod">Código</th><th class="col-maq">Máquina / equipamento</th>
+      <th class="num">Agora</th>${cab}
     </tr></thead><tbody>` + linhas.map(m => {
-      const e = m.equipamento;
+      const e = m.equipamento, u = unidadeDe(e);
       return `<tr>
-        <td class="codigo">${esc(e.codigo)}</td>
-        <td>${esc(e.descricao)}</td>
-        <td class="num">${leituraDe(e) == null ? '—' : nHoras(leituraDe(e)) + ' ' + unidadeDe(e)}</td>
+        <td class="col-cod codigo">${esc(e.codigo)}</td>
+        <td class="col-maq">${esc(e.descricao)}<small>${esc(q.nome('locais', e.local_id))}</small></td>
+        <td class="num agora">${leituraDe(e) == null ? '—' : nHoras(leituraDe(e))}<small>${u}</small></td>
         ${colunas.map(t => {
           const x = m.itens[t.id];
           if (!x) return '<td class="cel vazia">—</td>';
-          const [cls] = ETIQUETA[x.c.status] || ETIQUETA.SEM_DADO;
+          const c = x.c, p = x.plano;
+          const [cls] = ETIQUETA[c.status] || ETIQUETA.SEM_DADO;
           const pecas = q.ativos('pecas_equipamento').filter(v =>
             v.equipamento_id === e.id && v.tipo_manutencao_id === t.id).length;
-          return `<td class="cel st-${cls}${marcados.has(x.plano.id) ? ' marcada' : ''}"
-                      data-plano="${esc(x.plano.id)}"
-                      title="${esc(x.c.motivo)} · próxima troca: ${esc(proximaTroca(x.c))}${pecas ? ' · ' + pecas + ' peça(s)' : ' · sem peça cadastrada'}">
-            <strong>${x.c.horas_restantes != null ? nHoras(x.c.horas_restantes) : '—'}</strong>
-            <span>${CURTO[x.c.status]}</span>
-            <i>${esc(proximaTroca(x.c, { curto: true }))}</i>
-            ${pecas === 0 ? '<em>sem peça</em>' : ''}
+          const falta = quantoFalta(p, c, u);
+          return `<td class="cel st-${cls}${marcados.has(p.id) ? ' marcada' : ''}"
+                      data-plano="${esc(p.id)}"
+                      title="${esc(q.nome('tipos_manutencao', t.id))} · ${esc(c.motivo)}${pecas ? ' · ' + pecas + ' peça(s)' : ' · sem peça cadastrada'}">
+            <strong>${esc(proximaTroca(c, { curto: true }))}${pecas === 0 ? '<i title="sem peça cadastrada">•</i>' : ''}</strong>
+            <span>${CURTO[c.status]} · ${esc(falta.txt)}</span>
           </td>`;
         }).join('')}
-        <td class="num">${m.urgentes || ''}</td>
       </tr>`;
     }).join('') + '</tbody></table></div>';
 }
