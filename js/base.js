@@ -390,20 +390,24 @@ async function telaFila() {
 
 function telaLogin(mensagem) {
   $('#menu').hidden = true;
+  $('#menu2').hidden = true;
+  document.body.classList.remove('sem-rodape');
   $('#tela').innerHTML = `
-    <h1>Entrar</h1>
-    <p class="sub">Use o e-mail e a senha cadastrados por quem administra o app.</p>
-    ${mensagem ? `<p class="sub" style="color:var(--urgente)">${esc(mensagem)}</p>` : ''}
-    <div style="max-width:400px">
-      <div class="campo"><label for="lg-email">E-mail</label>
-        <input type="email" id="lg-email" autocomplete="username"></div>
+    <section class="login">
+      <img class="lg-icone" src="icons/gr-192.v1.png" alt="">
+      <h1>Gestão Rápida <span>Manutenções</span></h1>
+      <p class="sub">Entre com o usuário que a administração cadastrou para você.</p>
+      ${mensagem ? `<p class="sub" style="color:var(--urgente)">${esc(mensagem)}</p>` : ''}
+      <div class="campo"><label for="lg-email">Usuário</label>
+        <input type="text" id="lg-email" autocomplete="username"
+               placeholder="seu nome de usuário" autocapitalize="none" spellcheck="false"></div>
       <div class="campo"><label for="lg-senha">Senha</label>
         <input type="password" id="lg-senha" autocomplete="current-password"></div>
       <button type="button" class="btn" id="lg-entrar">Entrar</button>
       <p style="margin-top:14px">
         <button type="button" class="btn-fantasma" id="lg-esqueci">Esqueceu sua senha?</button>
       </p>
-    </div>`;
+    </section>`;
   $('#lg-entrar').onclick = entrar;
   $('#lg-esqueci').onclick = esqueciSenha;
   $('#lg-senha').onkeydown = e => { if (e.key === 'Enter') entrar(); };
@@ -417,10 +421,11 @@ function telaLogin(mensagem) {
 function esqueciSenha() {
   const email = ($('#lg-email') && $('#lg-email').value.trim()) || '';
   abrirModal('Recuperar a senha', `
-    <p class="sub">Informe o e-mail cadastrado. Você vai receber um link para definir
-       uma senha nova — ele volta direto para este app.</p>
-    <div class="campo"><label for="rs-email">E-mail</label>
-      <input type="email" id="rs-email" value="${esc(email)}" autocomplete="username"></div>
+    <p class="sub">Informe seu usuário ou o e-mail do seu login. A mensagem com o link
+       para criar uma senha nova vai para o e-mail cadastrado.</p>
+    <div class="campo"><label for="rs-email">Usuário ou e-mail</label>
+      <input type="text" id="rs-email" value="${esc(email)}" autocomplete="username"
+             autocapitalize="none" spellcheck="false"></div>
     <div class="acoes">
       <button type="button" class="btn" id="rs-enviar">Enviar o link</button>
       <button type="button" class="btn neutro" id="rs-cancelar">Cancelar</button>
@@ -428,17 +433,25 @@ function esqueciSenha() {
     corpo.querySelector('#rs-cancelar').onclick = fecharModal;
     corpo.querySelector('#rs-enviar').onclick = async () => {
       const e = corpo.querySelector('#rs-email').value.trim();
-      if (!e) return aviso('Informe o e-mail.', true);
+      if (!e) return aviso('Informe o usuário ou o e-mail.', true);
       if (!App.online) return aviso('Precisa de internet para enviar o link.', true);
       const b = corpo.querySelector('#rs-enviar');
       b.disabled = true; b.textContent = 'Enviando…';
-      const { error } = await App.sb.auth.resetPasswordForEmail(e, {
-        redirectTo: location.origin + location.pathname
-      });
+      const volta = location.origin + location.pathname;
+      let error = null;
+      if (e.includes('@')) {
+        ({ error } = await App.sb.auth.resetPasswordForEmail(e.toLowerCase(), { redirectTo: volta }));
+      } else {
+        // Pelo nome de usuário quem manda é o servidor: só ele sabe o e-mail.
+        const r = await App.sb.functions.invoke('entrar', {
+          body: { acao: 'recuperar', usuario: e.toLowerCase(), volta },
+        });
+        error = r.error || null;
+      }
       fecharModal();
-      // Não dizemos se o e-mail existe ou não: isso evita descobrir quem tem conta.
+      // Não dizemos se existe ou não: isso evita descobrir quem tem conta.
       aviso(error ? 'Não consegui enviar agora. Tente de novo em alguns minutos.'
-                  : 'Se esse e-mail estiver cadastrado, o link chega em instantes.', !!error);
+                  : 'Se esse usuário estiver cadastrado, o link chega em instantes.', !!error);
     };
   });
 }
@@ -473,14 +486,36 @@ function telaNovaSenha() {
   $('#ns-2').onkeydown = e => { if (e.key === 'Enter') $('#ns-salvar').click(); };
 }
 
+/* Entrada por NOME de usuário, como no Gestão Rápida (Pessoas). Quem digitar
+   o e-mail continua entrando pelo caminho normal do Supabase; quem digitar o
+   nome passa pela função `entrar`, no servidor, que é quem sabe traduzir nome
+   em e-mail — a tabela de usuários não é legível para quem ainda não entrou. */
 async function entrar() {
-  const email = $('#lg-email').value.trim(), senha = $('#lg-senha').value;
-  if (!email || !senha) return aviso('Preencha e-mail e senha.', true);
+  const quem = $('#lg-email').value.trim(), senha = $('#lg-senha').value;
+  if (!quem || !senha) return aviso('Preencha usuário e senha.', true);
   if (!App.online) return aviso('A primeira entrada precisa de internet.', true);
-  $('#lg-entrar').disabled = true;
-  const { error } = await App.sb.auth.signInWithPassword({ email, password: senha });
-  $('#lg-entrar').disabled = false;
-  if (error) return telaLogin('E-mail ou senha não conferem.');
+  const b = $('#lg-entrar'); b.disabled = true; b.textContent = 'Entrando…';
+
+  try {
+    if (quem.includes('@')) {
+      const { error } = await App.sb.auth.signInWithPassword({
+        email: quem.toLowerCase(), password: senha });
+      if (error) throw new Error('Usuário ou senha não conferem.');
+    } else {
+      const { data, error } = await App.sb.functions.invoke('entrar', {
+        body: { usuario: quem.toLowerCase(), senha },
+      });
+      if (error || data?.erro) throw new Error(data?.erro || 'Usuário ou senha não conferem.');
+      const { error: erroSessao } = await App.sb.auth.setSession({
+        access_token: data.access_token, refresh_token: data.refresh_token,
+      });
+      if (erroSessao) throw new Error('Entrei, mas não consegui abrir a sessão.');
+    }
+  } catch (e) {
+    b.disabled = false; b.textContent = 'Entrar';
+    return telaLogin(e.message || 'Usuário ou senha não conferem.');
+  }
+  b.disabled = false; b.textContent = 'Entrar';
   iniciarSessao();
 }
 
@@ -502,15 +537,18 @@ async function iniciarSessao() {
   await meta('usuario', App.usuario);
 
   $('#btn-sair').classList.remove('oculto');
-  $('#menu').hidden = false;
 
   $('#tela').innerHTML = '<section class="carregando"><p>Baixando os cadastros para uso sem internet…</p></section>';
   await baixarBase();
   await carregarDaBaseLocal();
 
+  // O que essa pessoa enxerga: módulos, telas e o menu montado em cima disso.
+  carregarAcesso(App.usuario);
+  montarMenu();
+
   // O usuário precisa enxergar em qual local está trabalhando.
   const locais = q.ativos('locais');
-  $('#lbl-local').textContent = App.usuario.perfil === 'ADMINISTRADOR'
+  $('#lbl-local').textContent = Acesso.admin
     ? 'Todos os locais'
     : locais.map(l => l.nome).join(' · ');
 
@@ -518,8 +556,7 @@ async function iniciarSessao() {
   const params = new URLSearchParams(location.search);
   const acao = params.get('acao'), ck = params.get('checklist');
   if (ck && window.abrirRelatorioChecklist) { irPara('checklist'); abrirRelatorioChecklist(ck); }
-  else if (acao && TELAS[acao]) irPara(acao);
-  else irPara('inicio');
+  else if (acao && TELAS[acao] && podeTela(acao)) irPara(acao);
   if (acao || ck) history.replaceState(null, '', location.pathname);
   sincronizar();
 }
@@ -527,7 +564,13 @@ async function iniciarSessao() {
 /* ---------------------------------------------------------------- navegação */
 
 function irPara(nome) {
-  $$('.menu button').forEach(b => b.classList.toggle('ativo', b.dataset.tela === nome));
+  // Quem não tem a tela liberada não chega nela nem por link nem por botão.
+  if (window.podeTela && nome !== 'marca' && nome !== 'config' && !podeTela(nome)) {
+    aviso('Você não tem acesso a essa tela.', true);
+    return mostrarInicio();
+  }
+  if (nome !== 'marca') document.body.classList.remove('sem-rodape');
+  if (window.marcarMenu) marcarMenu(nome);
   const fn = TELAS[nome];
   if (fn) fn($('#tela'));
 }
@@ -558,7 +601,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       '<p>No iPhone a instalação é pelo Safari: toque em <strong>Compartilhar</strong> e depois em ' +
       '<strong>Adicionar à Tela de Início</strong>. O app abre em janela própria, sem a barra do navegador.</p>');
   };
-  $$('.menu button').forEach(b => b.onclick = () => irPara(b.dataset.tela));
   // o nome do app no topo funciona como o logotipo de um site: volta ao início
   const bInicio = $('#btn-inicio');
   if (bInicio) bInicio.onclick = () => irPara('inicio');
@@ -602,7 +644,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 /* Os arquivos são scripts clássicos: `const` no topo não vira propriedade de
    window. Publico o que telas.js usa, para a ordem de carga não importar. */
 Object.assign(window, {
-  App, q, $, $$, esc, aviso, abrirModal, fecharModal,
+  App, q, $, $$, esc, aviso, abrirModal, fecharModal, telaLogin,
   gravar, inativar, irPara, sincronizar, pk, meta, blobDaFoto, baixarBase,
   guardarFoto, enviarFotos, esqueciSenha, telaNovaSenha
 });
