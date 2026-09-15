@@ -224,6 +224,8 @@ function fichaEquipamento(id) {
             <td class="num">${n === 0 ? '<span class="etq atencao">nenhuma</span>' : n}</td></tr>`;
         }).join('') + '</tbody></table>'}
 
+    ${PE_LOP}
+
     <div class="acoes">
       <button type="button" class="btn" id="fi-pecas">Peças desta máquina</button>
       <button type="button" class="btn secundario" id="fi-editar">Editar</button>

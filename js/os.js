@@ -661,7 +661,7 @@ function abrirOS(idOS) {
         <div class="os-barra"></div>
         <p class="os-ass"><strong>Guilherme Lopes</strong> <span>· Gerente Administrativo</span></p>
         <p class="os-empresa">SAKUMA Agronegócios</p>
-        <p class="os-lop">Desenvolvido por LOP · Inteligência para o agronegócio</p>
+        ${PE_LOP}
       </footer>
     </div>
 

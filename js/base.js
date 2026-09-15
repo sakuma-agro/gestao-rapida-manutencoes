@@ -648,3 +648,8 @@ Object.assign(window, {
   gravar, inativar, irPara, sincronizar, pk, meta, blobDaFoto, baixarBase,
   guardarFoto, enviarFotos, esqueciSenha, telaNovaSenha
 });
+
+/* A assinatura da LOP no pé de todo relatório impresso: símbolo e frase, no
+   canto direito. Um lugar só, para os três documentos não divergirem. */
+const PE_LOP = '<div class="pe-lop"><img src="img/lop-marca.png" alt="LOP"><span>Inteligência para o agronegócio</span></div>';
+Object.assign(window, { PE_LOP });

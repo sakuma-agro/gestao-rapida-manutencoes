@@ -689,8 +689,9 @@ function folhaChecklist(e, modelo, opts) {
     ${preenchido ? '<div class="fotos" data-fotos></div>' : ''}
     <div class="rod">
       <span>${preenchido && proximo ? '<strong>Próximo check list: ' + formatarData(proximo) + '</strong>' : 'Periodicidade: a cada ' + dias + ' dias'}</span>
-      <span>SAKUMA Agronegócios · <strong>Guilherme Lopes</strong> · Desenvolvido por LOP · Inteligência para o agronegócio</span>
+      <span>SAKUMA Agronegócios · <strong>Guilherme Lopes</strong></span>
     </div>
+    ${PE_LOP}
   </div>`;
 }
 
