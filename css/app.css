@@ -268,6 +268,21 @@ legend{padding:0 8px;font-weight:bold;font-size:14px;color:var(--marrom)}
    O cabeçalho e as duas primeiras colunas ficam grudados: dá para rolar 40
    máquinas e 6 itens sem perder de vista quem é quem. */
 .rolagem{overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:calc(100vh - 210px)}
+
+/* No consolidado o cabeçalho da tela cede espaço para a tabela: o texto de
+   apoio sai, os quatro cartões viram uma faixa baixa e a rolagem cresce. */
+body.modo-quadro #tela > h1 + .sub{display:none}
+body.modo-quadro .filtros{margin-bottom:10px}
+body.modo-quadro #pv-resumo{
+  display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;
+}
+body.modo-quadro #pv-resumo .cartao{
+  flex:1 1 120px;display:flex;align-items:baseline;gap:6px;padding:6px 10px;
+}
+body.modo-quadro #pv-resumo .cartao b{font-size:20px;line-height:1}
+body.modo-quadro #pv-resumo .cartao span{font-size:11px}
+body.modo-quadro h1{margin-bottom:4px;font-size:20px}
+body.modo-quadro .rolagem{max-height:calc(100vh - 150px)}
 .quadro{min-width:900px;border-collapse:separate;border-spacing:0}
 .quadro th{
   font-size:11.5px;padding:7px 6px;vertical-align:bottom;text-align:center;
