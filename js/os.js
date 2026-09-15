@@ -216,7 +216,11 @@ function desenharPainel() {
   const colunas = q.ordenado('tipos_manutencao', 'ordem')
     .filter(t => usados.has(t.id))
     .filter(t => !itemPainel || t.id === itemPainel)
-    .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+    /* Item sem ordem cadastrada vai para o fim, não para o começo: o item novo
+       (o GPS, por exemplo) não pode empurrar o óleo de motor para a direita. */
+    .sort((a, b) => (a.ordem == null ? 9e9 : Number(a.ordem))
+                  - (b.ordem == null ? 9e9 : Number(b.ordem))
+                  || String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
 
   let linhas = [...porMaquina.values()].map(m => {
     const lista = Object.values(m.itens);
