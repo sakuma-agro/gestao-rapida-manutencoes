@@ -120,14 +120,14 @@ function proximaTroca(c, { curto = false } = {}) {
    máquina, uma coluna por item de manutenção, e em cada cruzamento as
    horas restantes com o status. Clicar na célula marca para a OS. */
 
-const MODOS = { quadro: 'Quadro', lista: 'Lista' };
-let modoPainel = 'quadro';
+const MODOS = { cartoes: 'Cartões', quadro: 'Quadro', lista: 'Lista' };
+let modoPainel = 'cartoes';
 const marcados = new Set();
 
 TELAS.vencimentos = el => {
   el.innerHTML = `
     <h1>Painel de vencimentos</h1>
-    <p class="sub">Máquinas e implementos juntos. Clique na célula do item para marcar,
+    <p class="sub">Máquinas e implementos juntos. Marque os itens que vão para a oficina
        e gere a ordem de serviço — ela sai com a peça, o part number e o próximo horímetro.</p>
     <div class="filtros">
       <input type="search" id="pv-busca" placeholder="Buscar máquina">
@@ -142,12 +142,15 @@ TELAS.vencimentos = el => {
         ${q.ordenado('locais').map(l => `<option value="${esc(l.id)}">${esc(l.nome)}</option>`).join('')}
       </select>
       <select id="pv-modo">
-        <option value="quadro">Quadro</option>
+        <option value="cartoes">Cartões por máquina</option>
+        <option value="quadro">Quadro da planilha</option>
         <option value="lista">Lista detalhada</option>
       </select>
     </div>
     <div id="pv-resumo" class="painel"></div>
-    <div class="acoes">
+    <!-- A barra de ação só aparece quando há item marcado. Antes disso ela era
+         dois botões mortos ocupando a primeira tela do celular. -->
+    <div class="acoes pv-acoes oculto" id="pv-acoes">
       <button type="button" class="btn" id="pv-gerar" disabled>Gerar OS do que está marcado</button>
       <button type="button" class="btn neutro" id="pv-limpar">Limpar marcação</button>
     </div>
@@ -169,6 +172,8 @@ function botaoGerar() {
   b.disabled = marcados.size === 0;
   b.textContent = marcados.size === 0 ? 'Gerar OS do que está marcado'
     : 'Gerar OS de ' + marcados.size + (marcados.size === 1 ? ' item marcado' : ' itens marcados');
+  const barra = $('#pv-acoes');
+  if (barra) barra.classList.toggle('oculto', marcados.size === 0);
 }
 
 function desenharPainel() {
@@ -218,32 +223,127 @@ function desenharPainel() {
 
   $('#pv-lista').innerHTML = linhas.length === 0
     ? '<div class="vazio"><p>Nada com esses filtros.</p></div>'
-    : (modoPainel === 'quadro' ? quadro(linhas, colunas) : listaDetalhada(linhas));
+    : (modoPainel === 'cartoes' ? cartoes(linhas)
+      : modoPainel === 'quadro' ? quadro(linhas, colunas) : listaDetalhada(linhas));
 
-  $('#pv-lista').querySelectorAll('[data-plano]').forEach(c => c.onclick = () => {
-    const id = c.dataset.plano;
-    marcados.has(id) ? marcados.delete(id) : marcados.add(id);
-    c.classList.toggle('marcada');
-    botaoGerar();
+  $('#pv-lista').querySelectorAll('[data-plano]').forEach(c => {
+    const alterna = () => {
+      const id = c.dataset.plano;
+      marcados.has(id) ? marcados.delete(id) : marcados.add(id);
+      c.classList.toggle('marcada');
+      const rot = c.querySelector('.it-marcar');
+      if (rot) rot.textContent = marcados.has(id) ? 'marcado para a OS' : 'marcar';
+      botaoGerar();
+    };
+    c.onclick = alterna;
+    // o cartão é um botão de verdade: teclado também marca
+    c.onkeydown = ev => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); alterna(); }
+    };
   });
   botaoGerar();
 }
 
 const CURTO = { TROCAR_URGENTE:'URGENTE', PERIODO_VENCIDO:'PERÍODO', ATENCAO:'ATENÇÃO', OK:'OK', SEM_DADO:'—' };
 
-/* O item da máquina que vence primeiro — por hora quando há horímetro, senão
-   pela data. É ele que responde "quando essa máquina volta para a oficina". */
-function proximaDaMaquina(m) {
-  const itens = Object.values(m.itens)
-    .filter(x => x.c.proximo_hr != null || x.c.proxima_data);
-  if (!itens.length) return null;
-  return itens.sort((a, b) => {
-    const ha = a.c.horas_restantes, hb = b.c.horas_restantes;
-    if (ha != null && hb != null) return ha - hb;
-    if (ha != null) return -1;
-    if (hb != null) return 1;
-    return String(a.c.proxima_data).localeCompare(String(b.c.proxima_data));
-  })[0];
+
+/* ---------------------------------------------------------------- cartões
+
+   O jeito de ler o painel sem decorar coluna: um cartão por máquina, com o
+   horímetro de agora em cima, e dentro dele um item por linha de manutenção.
+   Cada item responde as quatro perguntas na mesma ordem, sempre:
+   quando trocou, em que marca troca de novo, quanto falta, e se tem peça
+   cadastrada. A barra mostra quanto do intervalo já foi rodado — é o que
+   deixa o estado da máquina visível de relance, sem ler número nenhum. */
+
+/* Quanto do intervalo já correu, de 0 a 1. Hora manda quando existe; senão
+   vale o prazo em dias. */
+function progresso(plano, c) {
+  if (c.horas_restantes != null && plano.periodicidade_horas) {
+    return Math.min(1.15, Math.max(0, c.horas_rodadas / Number(plano.periodicidade_horas)));
+  }
+  if (c.dias != null && plano.periodicidade_dias) {
+    return Math.min(1.15, Math.max(0, c.dias / Number(plano.periodicidade_dias)));
+  }
+  return 0;
+}
+
+/* O que falta, dito do jeito que o mecânico fala. */
+function quantoFalta(plano, c, u) {
+  if (c.horas_restantes != null) {
+    return c.horas_restantes < 0
+      ? { txt: 'passou ' + nHoras(-c.horas_restantes) + ' ' + u, tarde: true }
+      : { txt: 'faltam ' + nHoras(c.horas_restantes) + ' ' + u, tarde: false };
+  }
+  if (c.dias != null && plano.periodicidade_dias != null) {
+    const d = Number(plano.periodicidade_dias) - c.dias;
+    return d < 0
+      ? { txt: 'passou ' + (-d) + (d === -1 ? ' dia' : ' dias'), tarde: true }
+      : { txt: 'faltam ' + d + (d === 1 ? ' dia' : ' dias'), tarde: false };
+  }
+  return { txt: 'sem última troca', tarde: false };
+}
+
+function itemDoCartao(e, x, u) {
+  const p = x.plano, c = x.c;
+  const [cls, rot] = ETIQUETA[c.status] || ETIQUETA.SEM_DADO;
+  const pecas = q.ativos('pecas_equipamento').filter(v =>
+    v.equipamento_id === e.id && v.tipo_manutencao_id === p.tipo_manutencao_id).length;
+  const falta = quantoFalta(p, c, u);
+  const pct = Math.round(progresso(p, c) * 100);
+
+  const ultima = [
+    p.ultima_troca_leitura != null ? nHoras(p.ultima_troca_leitura) + ' ' + u : null,
+    p.ultima_troca_data ? formatarData(p.ultima_troca_data) : null,
+  ].filter(Boolean).join(' · ') || '—';
+
+  const proxima = [
+    c.proximo_hr != null ? nHoras(c.proximo_hr) + ' ' + u : null,
+    c.proxima_data ? formatarData(c.proxima_data) : null,
+  ].filter(Boolean).join(' · ') || '—';
+
+  return `<div class="it st-${cls}${marcados.has(p.id) ? ' marcada' : ''}" data-plano="${esc(p.id)}"
+               role="button" tabindex="0" title="${esc(c.motivo)}">
+    <div class="it-topo">
+      <b>${esc(q.nome('tipos_manutencao', p.tipo_manutencao_id))}</b>
+      <span class="etq ${cls}">${rot}</span>
+    </div>
+    <div class="it-linha">
+      <span class="it-dado"><i>última</i>${esc(ultima)}</span>
+      <span class="it-dado forte"><i>próxima</i>${esc(proxima)}</span>
+      <span class="it-dado${falta.tarde ? ' tarde' : ''}"><i>situação</i>${esc(falta.txt)}</span>
+    </div>
+    <div class="it-barra"><span style="width:${Math.min(100, pct)}%"></span></div>
+    <div class="it-pe">
+      <span>${pecas ? pecas + (pecas === 1 ? ' peça no estoque' : ' peças no estoque')
+                    : '<em>sem peça cadastrada</em>'}</span>
+      <span class="it-marcar">${marcados.has(p.id) ? 'marcado para a OS' : 'marcar'}</span>
+    </div>
+  </div>`;
+}
+
+function cartoes(linhas) {
+  return `<p class="sub">${linhas.length} ${linhas.length === 1 ? 'máquina' : 'máquinas'} ·
+      toque no item para marcar e gerar a ordem de serviço</p>
+    <div class="cartoes">` + linhas.map(m => {
+      const e = m.equipamento, u = unidadeDe(e);
+      const itens = Object.values(m.itens)
+        .sort((a, b) => (a.c.horas_restantes ?? 9e9) - (b.c.horas_restantes ?? 9e9));
+      return `<article class="mq${m.urgentes ? ' urgente' : ''}">
+        <header class="mq-topo">
+          <div class="mq-quem">
+            <span class="codigo">${esc(e.codigo)}</span>
+            <strong>${esc(e.descricao)}</strong>
+            <small>${esc(q.nome('locais', e.local_id))}</small>
+          </div>
+          <div class="mq-leitura">
+            <b>${leituraDe(e) == null ? '—' : nHoras(leituraDe(e))}</b>
+            <span>${u} agora</span>
+          </div>
+        </header>
+        <div class="mq-itens">${itens.map(x => itemDoCartao(e, x, u)).join('')}</div>
+      </article>`;
+    }).join('') + '</div>';
 }
 
 function quadro(linhas, colunas) {
@@ -252,18 +352,13 @@ function quadro(linhas, colunas) {
       clique na célula para marcar o item</p>
     <div class="rolagem"><table class="tabela quadro"><thead><tr>
       <th>Código</th><th>Máquina / equipamento</th><th class="num">Leitura</th>
-      <th class="num">Próxima troca</th>
       ${cab}<th class="num">Urgentes</th>
     </tr></thead><tbody>` + linhas.map(m => {
       const e = m.equipamento;
-      // A próxima troca da MÁQUINA é a do item que vence primeiro.
-      const prox = proximaDaMaquina(m);
       return `<tr>
         <td class="codigo">${esc(e.codigo)}</td>
         <td>${esc(e.descricao)}</td>
         <td class="num">${leituraDe(e) == null ? '—' : nHoras(leituraDe(e)) + ' ' + unidadeDe(e)}</td>
-        <td class="num prox">${prox ? `<strong>${proximaTroca(prox.c)}</strong>
-             <span>${esc(q.nome('tipos_manutencao', prox.plano.tipo_manutencao_id))}</span>` : '—'}</td>
         ${colunas.map(t => {
           const x = m.itens[t.id];
           if (!x) return '<td class="cel vazia">—</td>';
@@ -661,7 +756,7 @@ function abrirOS(idOS) {
         <div class="os-barra"></div>
         <p class="os-ass"><strong>Guilherme Lopes</strong> <span>· Gerente Administrativo</span></p>
         <p class="os-empresa">SAKUMA Agronegócios</p>
-        ${PE_LOP}
+        <p class="os-lop">Desenvolvido por LOP · Inteligência para o agronegócio</p>
       </footer>
     </div>
 
