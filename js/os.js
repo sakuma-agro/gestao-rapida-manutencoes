@@ -123,7 +123,26 @@ function proximaTroca(c, { curto = false } = {}) {
 const MODOS = { planilha: 'Planilha', quadro: 'Consolidado', cartoes: 'Cartões', lista: 'Lista' };
 let modoPainel = 'planilha';
 let itemPainel = '';            // '' = todos os itens, como na planilha
+let letraPainel = '';           // '' = toda a frota; 'T' = só os tratores
 const marcados = new Set();
+
+/* A letra do código é a família do bem na SAKUMA: T de trator, F de vaso de
+   pressão, P de pulverizador e pivô, V de veículo. Ela sai do próprio código
+   cadastrado — o app não tem lista fixa de letra, para uma letra nova
+   aparecer sozinha assim que alguém cadastrar o primeiro bem dela. */
+function letraDe(e) {
+  const m = String(e && e.codigo || '').trim().match(/^[A-Za-zÀ-ÿ]+/);
+  return m ? m[0].toUpperCase() : '';
+}
+
+function letrasDaFrota() {
+  const conta = new Map();
+  q.ativos('equipamentos').forEach(e => {
+    const l = letraDe(e);
+    if (l) conta.set(l, (conta.get(l) || 0) + 1);
+  });
+  return [...conta.entries()].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'));
+}
 
 TELAS.vencimentos = el => {
   el.innerHTML = `
@@ -138,6 +157,10 @@ TELAS.vencimentos = el => {
         <option value="PERIODO_VENCIDO">Só período vencido</option>
         <option value="ATENCAO">Só atenção</option>
         <option value="todos">Todas as máquinas</option>
+      </select>
+      <select id="pv-letra"><option value="">Toda a frota</option>
+        ${letrasDaFrota().map(([l, n]) =>
+          `<option value="${esc(l)}">${esc(l)} — ${n} ${n === 1 ? 'bem' : 'bens'}</option>`).join('')}
       </select>
       <select id="pv-local"><option value="">Todos os locais</option>
         ${q.ordenado('locais').map(l => `<option value="${esc(l.id)}">${esc(l.nome)}</option>`).join('')}
@@ -166,7 +189,8 @@ TELAS.vencimentos = el => {
 
   $('#pv-modo').value = modoPainel;
   $('#pv-item').value = itemPainel;
-  ['pv-busca','pv-status','pv-local'].forEach(id => {
+  $('#pv-letra').value = letraPainel;
+  ['pv-busca','pv-status','pv-local','pv-letra'].forEach(id => {
     const e = document.getElementById(id); e.oninput = desenharPainel; e.onchange = desenharPainel;
   });
   $('#pv-item').onchange = () => { itemPainel = $('#pv-item').value; desenharPainel(); };
@@ -189,12 +213,20 @@ function botaoGerar() {
 function desenharPainel() {
   const busca = ($('#pv-busca').value || '').toLowerCase();
   const fSt = $('#pv-status').value, fLo = $('#pv-local').value;
+  letraPainel = $('#pv-letra') ? $('#pv-letra').value : '';
 
   // calcula tudo uma vez
   const todos = q.ativos('planos_manutencao').map(p => ({ plano: p, c: calcular(p) }))
     .filter(x => x.c.equipamento && x.c.equipamento.ativo !== false);
 
-  const conta = st => todos.filter(x => x.c.status === st).length;
+  /* Os quatro números seguem o recorte da frota — local e letra —, senão
+     filtrar só os tratores deixava em cima um total que não é dos tratores.
+     Busca e status não entram: eles servem para achar, não para contar. */
+  const noRecorte = todos.filter(x => {
+    const e = x.c.equipamento;
+    return (!fLo || e.local_id === fLo) && (!letraPainel || letraDe(e) === letraPainel);
+  });
+  const conta = st => noRecorte.filter(x => x.c.status === st).length;
   $('#pv-resumo').innerHTML = `
     <div class="cartao alerta"><b>${conta('TROCAR_URGENTE')}</b><span>trocar urgente</span></div>
     <div class="cartao alerta"><b>${conta('PERIODO_VENCIDO')}</b><span>período vencido</span></div>
@@ -206,6 +238,7 @@ function desenharPainel() {
   for (const x of todos) {
     const e = x.c.equipamento;
     if (fLo && e.local_id !== fLo) continue;
+    if (letraPainel && letraDe(e) !== letraPainel) continue;
     if (busca && !(e.codigo + ' ' + e.descricao).toLowerCase().includes(busca)) continue;
     if (!porMaquina.has(e.id)) porMaquina.set(e.id, { equipamento: e, itens: {} });
     porMaquina.get(e.id).itens[x.plano.tipo_manutencao_id] = x;
