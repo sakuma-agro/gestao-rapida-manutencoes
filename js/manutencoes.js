@@ -296,8 +296,10 @@ function formManutencao(idMaquina = '', idTipo = '') {
           if (e.unidade_controle !== 'ACUMULADO' &&
               (atual == null || leitura >= atual) &&
               (!e.leitura_data || d.data_manutencao >= e.leitura_data)) {
-            e.leitura_atual = leitura; e.leitura_data = d.data_manutencao;
-            await gravar('equipamentos', e);
+            /* gravarBem e não gravar('equipamentos'): horas_acumuladas e
+               km_acumulados são colunas calculadas no banco e o Postgres recusa
+               a gravação se elas forem junto. */
+            await gravarBem(e, { leitura_atual: leitura, leitura_data: d.data_manutencao });
           }
         }
 
