@@ -463,3 +463,111 @@ tr.cel.marcada td{background:#F1F7EA}
   .ck-folha{font-size:10pt}
   .ck-barra{display:none !important}
 }
+
+/* =====================================================================
+   ACESSO — menu de módulos, tela de marca, login e configurações
+   Mesma lógica do Gestão Rápida (Pessoas): a primeira faixa são os
+   módulos, a segunda são as telas do módulo aberto.
+   ===================================================================== */
+
+/* segunda faixa: as telas do módulo, em pílulas, para não competir com a
+   faixa de cima */
+.menu2{
+  display:flex;gap:6px;padding:8px 14px;background:var(--branco);
+  border-bottom:1px solid var(--linha);overflow-x:auto;
+}
+.menu2[hidden]{display:none}
+.menu2 button{
+  min-height:36px;padding:0 14px;border:1px solid var(--linha);border-radius:20px;
+  background:var(--branco);font:inherit;font-size:14px;color:var(--cinza);
+  cursor:pointer;white-space:nowrap;
+}
+.menu2 button:hover{border-color:var(--verde)}
+.menu2 button.ativo{
+  background:var(--verde);border-color:var(--verde);color:#fff;font-weight:bold;
+}
+
+/* Na tela de entrada quem assina é a marca grande do meio; o rodapé fixo sai,
+   para a LOP não aparecer duas vezes na mesma página. */
+body.sem-rodape .rodape{display:none}
+body.sem-rodape .conteudo{padding-bottom:24px}
+
+/* ---------- tela de entrada: só as duas marcas ----------
+   A SAKUMA entra na versão vertical, como o arquivo veio. A LOP assina
+   embaixo, gravada a laser. O arquivo da assinatura tem quase metade da
+   largura em transparente à direita; as margens negativas encolhem a caixa
+   até a tinta, senão a marca fica torta para a esquerda. */
+.marca-inicio{
+  min-height:min(60vh,460px);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:40px 20px 30px;
+}
+.mi-sakuma{width:min(190px,46vw);height:auto}
+.marca-inicio h2{
+  margin:28px 0 0;font-size:21px;font-weight:normal;color:var(--marrom);letter-spacing:.2px;
+}
+.marca-inicio h2 span{
+  display:inline-block;margin-left:8px;padding:3px 10px;border-radius:20px;
+  background:rgba(132,189,0,.12);color:var(--verde-escuro);
+  font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;vertical-align:middle;
+}
+.mi-dica{margin:10px 0 0;color:var(--cinza-claro);font-size:14px}
+.mi-lop{
+  --lop:440px;width:var(--lop);height:auto;margin-top:48px;
+  margin-left:calc(var(--lop) * -0.0429);
+  margin-right:calc(var(--lop) * -0.455);
+}
+@media (max-width:560px){ .mi-lop{ --lop:300px } }
+
+/* ---------- login ---------- */
+.login{max-width:400px;margin:24px auto;text-align:left}
+.lg-icone{width:56px;height:56px;border-radius:12px;display:block;margin:0 auto 14px}
+.login h1{text-align:center;font-size:20px}
+.login h1 span{
+  display:inline-block;margin-left:6px;padding:2px 8px;border-radius:20px;
+  background:rgba(132,189,0,.12);color:var(--verde-escuro);
+  font-size:11px;font-weight:bold;letter-spacing:.4px;text-transform:uppercase;vertical-align:2px;
+}
+.login .sub{text-align:center}
+.login .btn{width:100%}
+.login p{text-align:center}
+
+/* ---------- configurações: quem entra vê o quê ---------- */
+.ce{text-align:center}
+.aviso-linha{
+  background:#FAF2EC;border:1px solid var(--marrom);border-radius:var(--raio);
+  padding:10px 12px;margin-bottom:12px;font-size:14px;
+}
+.aviso-linha.oculto{display:none}
+.cf-cx,.us-locais input,.us-telas input,.us-mod-topo input{width:18px;height:18px}
+
+.us-admin{display:flex;align-items:center;gap:8px;margin:14px 0}
+.us-admin small{color:var(--cinza-claro)}
+.us-locais{display:flex;flex-wrap:wrap;gap:10px 18px;margin-bottom:8px}
+.us-locais label{display:flex;align-items:center;gap:7px;font-size:15px}
+
+.us-mod{
+  border:1px solid var(--linha);border-radius:var(--raio);
+  padding:10px 12px;margin-bottom:8px;background:var(--branco);
+}
+.us-mod.desligado{opacity:.55}
+.us-mod-topo{display:flex;align-items:center;gap:8px;font-size:15px}
+.us-mod-topo small{margin-left:auto;color:var(--cinza-claro);font-size:12px}
+.us-telas{display:flex;flex-wrap:wrap;gap:8px 16px;margin:8px 0 0 26px}
+.us-telas label{display:flex;align-items:center;gap:7px;font-size:14px;color:var(--cinza)}
+
+/* a senha gerada aparece uma vez só — precisa saltar aos olhos */
+.us-senha{
+  margin-top:12px;padding:12px;border-radius:var(--raio);
+  background:rgba(132,189,0,.10);border:1px solid var(--verde);font-size:14px;
+}
+.us-senha.erro{background:#FAF2EC;border-color:var(--marrom)}
+.us-senha code{
+  display:inline-block;font-size:18px;letter-spacing:.5px;background:#fff;
+  border:1px solid var(--linha);border-radius:4px;padding:4px 10px;user-select:all;
+}
+.us-senha.oculto{display:none}
+
+@media (max-width:640px){
+  .menu2{padding:6px 12px}
+  .us-telas{margin-left:0}
+}
