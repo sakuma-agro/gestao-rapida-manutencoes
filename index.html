@@ -44,18 +44,11 @@
     <button type="button" id="btn-sair" class="btn-fantasma oculto">Sair</button>
   </div>
 
-  <nav class="menu" id="menu" hidden>
-    <button type="button" data-tela="inicio" class="ativo">Início</button>
-    <button type="button" data-tela="equipamentos">Bens</button>
-    <button type="button" data-tela="horimetro">Horímetro</button>
-    <button type="button" data-tela="vencimentos">Vencimentos</button>
-    <button type="button" data-tela="checklist">Check list</button>
-    <button type="button" data-tela="anomalias">Anomalias</button>
-    <button type="button" data-tela="ordens">Ordens de serviço</button>
-    <button type="button" data-tela="pecas">Peças</button>
-    <button type="button" data-tela="vinculos">Peças por máquina</button>
-    <button type="button" data-tela="cadastros">Cadastros</button>
-  </nav>
+  <!-- Duas faixas, como no Gestão Rápida (Pessoas): módulos em cima, telas do
+       módulo aberto embaixo. Quem monta as duas é o js/acesso.js, a partir do
+       que a pessoa tem liberado. -->
+  <nav class="menu" id="menu" hidden></nav>
+  <nav class="menu2" id="menu2" hidden></nav>
 </header>
 
 <main id="tela" class="conteudo">
@@ -84,6 +77,7 @@
 <script src="js/config.js"></script>
 <script src="js/base.js"></script>
 <script src="js/telas.js"></script>
+<script src="js/acesso.js"></script>
 <script src="js/os.js"></script>
 <script src="js/horimetro.js"></script>
 <script src="js/checklist.js"></script>

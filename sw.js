@@ -4,7 +4,7 @@
    sem quebrar o app já aberto: o novo só assume depois que fecha.
    ===================================================================== */
 
-const CACHE = 'gestao-rapida-manutencoes-v2';
+const CACHE = 'gestao-rapida-manutencoes-v3';
 
 const ARQUIVOS = [
   './',
@@ -13,6 +13,7 @@ const ARQUIVOS = [
   './css/app.css',
   './js/config.js',
   './js/base.js',
+  './js/acesso.js',
   './js/telas.js',
   './js/os.js',
   './js/horimetro.js',
@@ -23,6 +24,7 @@ const ARQUIVOS = [
   './icons/gr-180.v1.png',
   './icons/favicon-gr.v1.ico',
   './img/sakuma-logo.png',
+  './img/sakuma-marca-vertical.png',
   './img/lop-assinatura-laser-claro.png',
   './img/lop-assinatura-laser-escuro.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js'
