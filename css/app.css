@@ -293,7 +293,9 @@ body.modo-quadro .rolagem{max-height:calc(100vh - 150px)}
    coluna a mais visível sem rolar para o lado. */
 body.modo-quadro .conteudo,
 body.modo-quadro .topo-int{max-width:none;padding-left:18px;padding-right:18px}
-.quadro{min-width:900px;border-collapse:separate;border-spacing:0}
+/* mesmo motivo da .pl: overflow:hidden herdado de .tabela desligava o
+   congelamento das duas primeiras colunas */
+.quadro{min-width:900px;border-collapse:separate;border-spacing:0;overflow:visible;border-radius:0}
 .quadro th{
   font-size:11.5px;padding:7px 6px;vertical-align:bottom;text-align:center;
   position:sticky;top:0;z-index:3;
@@ -344,7 +346,10 @@ body.modo-quadro .topo-int{max-width:none;padding-left:18px;padding-right:18px}
    manutenção, cabeçalho em três andares (item / última-próxima / campo) e o
    STATUS pintado cheio, como as células coloridas do Excel. Código e
    descrição ficam grudados à esquerda enquanto os blocos correm ao lado. */
-.pl{border-collapse:separate;border-spacing:0;min-width:1100px}
+/* overflow:hidden vem de .tabela (para arredondar o canto). Numa tabela com
+   coluna congelada ele mata o position:sticky — o navegador passa a considerar
+   a própria tabela como caixa de recorte. Por isso aqui volta a visible. */
+.pl{border-collapse:separate;border-spacing:0;min-width:1100px;overflow:visible;border-radius:0}
 .pl th{
   position:sticky;z-index:3;text-align:center;vertical-align:middle;
   font-size:11px;padding:5px 6px;letter-spacing:.02em;
