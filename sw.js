@@ -4,7 +4,7 @@
    sem quebrar o app já aberto: o novo só assume depois que fecha.
    ===================================================================== */
 
-const CACHE = 'gestao-rapida-manutencoes-v10';
+const CACHE = 'gestao-rapida-manutencoes-v11';
 
 const ARQUIVOS = [
   './',
@@ -16,6 +16,7 @@ const ARQUIVOS = [
   './js/acesso.js',
   './js/telas.js',
   './js/os.js',
+  './js/manutencoes.js',
   './js/horimetro.js',
   './js/checklist.js',
   './sakuma-logo-horizontal.svg',
