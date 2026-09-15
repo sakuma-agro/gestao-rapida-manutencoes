@@ -386,6 +386,20 @@ async function telaFila() {
   });
 }
 
+/* A sessão fica em `sessionStorage`, não em `localStorage`: ela morre quando a
+   janela do app fecha. Foi pedido — app fechado tem de voltar pedindo senha.
+   O preço é que reabrir SEM INTERNET não entra, porque a primeira entrada
+   precisa falar com o servidor. Onde sessionStorage não existir (janela
+   anônima, navegador travado), o login simplesmente não é guardado, que é o
+   lado seguro do erro. */
+function guardaDaSessao() {
+  try {
+    sessionStorage.setItem('gr.teste', '1');
+    sessionStorage.removeItem('gr.teste');
+    return sessionStorage;
+  } catch (e) { return undefined; }
+}
+
 /* ---------------------------------------------------------------- login */
 
 function telaLogin(mensagem) {
@@ -603,7 +617,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
   // o nome do app no topo funciona como o logotipo de um site: volta ao início
   const bInicio = $('#btn-inicio');
-  if (bInicio) bInicio.onclick = () => irPara('inicio');
+  if (bInicio) bInicio.onclick = () =>
+    (window.mostrarInicio ? mostrarInicio() : irPara('inicio'));
 
   pintarEstado();
   await abrirBase();
@@ -616,8 +631,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  App.sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY,
-    { db: { schema: CONFIG.SCHEMA || 'public' } });
+  App.sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
+    db: { schema: CONFIG.SCHEMA || 'public' },
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      // Chave própria: o app de vistorias divide o mesmo endereço e o mesmo
+      // projeto Supabase, e não pode ser derrubado quando este app fecha.
+      storageKey: 'gr.manutencao.auth',
+      storage: guardaDaSessao(),
+    },
+  });
 
   // Voltando pelo link do e-mail: o endereço traz type=recovery.
   App.sb.auth.onAuthStateChange((evento) => {
@@ -648,8 +672,3 @@ Object.assign(window, {
   gravar, inativar, irPara, sincronizar, pk, meta, blobDaFoto, baixarBase,
   guardarFoto, enviarFotos, esqueciSenha, telaNovaSenha
 });
-
-/* A assinatura da LOP no pé de todo relatório impresso: símbolo e frase, no
-   canto direito. Um lugar só, para os três documentos não divergirem. */
-const PE_LOP = '<div class="pe-lop"><img src="img/lop-marca.png" alt="LOP"><span>Inteligência para o agronegócio</span></div>';
-Object.assign(window, { PE_LOP });
