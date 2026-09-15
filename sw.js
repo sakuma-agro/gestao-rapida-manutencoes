@@ -4,7 +4,7 @@
    sem quebrar o app já aberto: o novo só assume depois que fecha.
    ===================================================================== */
 
-const CACHE = 'gestao-rapida-manutencoes-v9';
+const CACHE = 'gestao-rapida-manutencoes-v10';
 
 const ARQUIVOS = [
   './',
