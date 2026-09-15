@@ -1,8 +1,9 @@
 /* =====================================================================
-   SAKUMA Manutenção de Frota — estilo
+   Gestão Rápida · Manutenções — SAKUMA Agronegócios — estilo
    Identidade: verde #84BD00, marrom #744F28, cinza #51534A, Arial.
    Sem preto puro. Botões grandes: o app é usado de luva, no campo.
-   Barra do desenvolvedor em grafite LOP #1B232B.
+   Topo no padrão do Gestão Rápida (Pessoas): marca SAKUMA no alto,
+   assinatura LOP gravada a laser no canto e no rodapé.
    ===================================================================== */
 
 :root{
@@ -38,16 +39,44 @@ body{
 }
 .oculto{display:none !important}
 
-/* ---------- barra LOP ---------- */
-.barra-lop{
-  background:var(--grafite);
-  color:#E8EAEC;
-  display:flex;align-items:center;justify-content:space-between;
-  gap:12px;padding:6px 14px;
-  padding-top:calc(6px + env(safe-area-inset-top));
+/* ---------- topo ----------
+   Uma barra só, como no Gestão Rápida (Pessoas): o nome do app à
+   esquerda (clicável, volta ao início), a marca SAKUMA ao lado, e à
+   direita o estado da conexão e os botões da sessão. Nada de barra
+   grafite separada: a SAKUMA é a dona da tela e a LOP assina embaixo,
+   gravada a laser — as duas marcas nunca no mesmo lugar. */
+.topo{
+  position:sticky;top:0;z-index:20;
+  background:var(--branco);border-bottom:3px solid var(--verde);
+  padding-top:env(safe-area-inset-top);
 }
-.marca-lop{height:26px;width:auto;display:block}
-.estado{display:flex;align-items:center;gap:8px;font-size:13px}
+.topo-int{
+  max-width:1100px;margin:0 auto;padding:10px 14px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.topo-int .cresce{flex:1}
+
+/* ícone e nome viram um botão só, mas continuam parecendo texto */
+.topo-inicio{
+  display:flex;align-items:center;gap:10px;border:0;background:none;
+  padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;border-radius:10px;
+}
+.topo-inicio img{height:34px;width:34px;border-radius:7px;display:block}
+.topo-inicio:hover h1{color:var(--verde-escuro)}
+.topo-inicio:focus-visible{outline:3px solid var(--marrom);outline-offset:3px}
+.topo h1{font-size:16px;margin:0;font-weight:bold;letter-spacing:-.2px;color:var(--cinza)}
+.topo h1 .modulo{
+  display:inline-block;margin-left:6px;padding:2px 8px;border-radius:20px;
+  background:rgba(132,189,0,.12);color:var(--verde-escuro);
+  font-size:11px;font-weight:bold;letter-spacing:.4px;text-transform:uppercase;vertical-align:2px;
+}
+
+/* marca SAKUMA: entra como o arquivo veio, só a altura é ajustada */
+.topo-divisor{width:1px;height:28px;background:var(--linha);margin:0 2px}
+.topo-marca{height:31px;width:auto;display:block}
+
+.local{color:var(--marrom);font-weight:bold;font-size:14px}
+.estado{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--cinza-claro)}
 .ponto{width:10px;height:10px;border-radius:50%;background:var(--cinza-claro);display:inline-block}
 .ponto.online{background:var(--verde)}
 .ponto.offline{background:var(--atencao)}
@@ -56,18 +85,22 @@ body{
   padding:5px 12px;font:inherit;font-size:13px;cursor:pointer;
 }
 
-/* ---------- topo SAKUMA ---------- */
-.topo{
-  background:var(--branco);border-bottom:3px solid var(--verde);
-  display:flex;align-items:center;justify-content:space-between;
-  gap:12px;padding:10px 14px;flex-wrap:wrap;
+/* No celular o topo encolhe: quem trabalha no campo precisa de tela,
+   não de cabeçalho. O essencial continua ali — nome, marca, estado da
+   conexão e a fila de envio. */
+@media (max-width:640px){
+  .topo-divisor{display:none}
+  .topo-marca{height:22px}
+  .topo-int{gap:8px;padding:8px 12px}
+  .topo-inicio{gap:8px}
+  .topo-inicio img{height:30px;width:30px}
+  .topo h1{font-size:15px}
+  .topo h1 .modulo{font-size:10px;padding:1px 6px;margin-left:5px}
+  .local{font-size:13px}
+  .estado{font-size:12.5px}
+  .fila{font-size:12.5px;padding:4px 10px}
+  .topo .btn-fantasma{min-height:34px;padding:0 10px;font-size:13px}
 }
-.marca{display:flex;align-items:center;gap:10px}
-.marca .icone{width:36px;height:36px}
-.marca strong{display:block;font-size:17px;letter-spacing:.08em;color:var(--cinza)}
-.marca span{display:block;font-size:12px;color:var(--cinza-claro)}
-.sessao{display:flex;align-items:center;gap:10px;font-size:14px}
-.local{color:var(--marrom);font-weight:bold}
 
 /* ---------- menu ---------- */
 .menu{
@@ -202,10 +235,22 @@ legend{padding:0 8px;font-weight:bold;font-size:14px;color:var(--marrom)}
 /* ---------- rodapé ---------- */
 .rodape{
   position:fixed;bottom:0;left:0;right:0;background:var(--branco);
-  border-top:1px solid var(--linha);text-align:center;
-  font-size:12px;color:var(--cinza-claro);padding:8px;
-  padding-bottom:calc(8px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--linha);
+  display:flex;align-items:center;justify-content:center;
+  padding:6px 8px;
+  padding-bottom:calc(6px + env(safe-area-inset-bottom));
 }
+/* A assinatura vem num arquivo de 1400 px de largura com quase metade
+   em transparente à direita. As margens negativas encolhem a caixa até
+   a tinta, para a marca ficar centralizada de verdade — sem recortar o
+   arquivo nem mexer no desenho. */
+.rodape-lop{
+  --lop:300px;
+  width:var(--lop);height:auto;display:block;opacity:.92;
+  margin-left:calc(var(--lop) * -0.0429);
+  margin-right:calc(var(--lop) * -0.455);
+}
+@media (max-width:560px){ .rodape-lop{ --lop:230px } }
 
 .vazio{
   background:var(--branco);border:1px dashed var(--linha);border-radius:var(--raio);
@@ -239,7 +284,7 @@ tr.cel.marcada td{background:#F1F7EA}
 /* Mesmo desenho dos relatórios SAKUMA: marca sobre fundo neutro, régua verde,
    título em marrom e rodapé com a barra verde e a assinatura. */
 .os-topo{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-.os-logo{width:42px;height:42px}
+.os-logo{height:44px;width:auto}
 .os-marca strong{display:block;font-size:20px;letter-spacing:.09em;color:var(--verde-escuro);line-height:1.1}
 .os-marca span{display:block;font-size:11px;letter-spacing:.06em;color:var(--cinza-claro)}
 .os-regua{height:5px;background:var(--verde);margin:0 0 12px}
@@ -268,7 +313,7 @@ tr.cel.marcada td{background:#F1F7EA}
 
 /* ---------- impressão A4 ---------- */
 @media print{
-  .barra-lop,.menu,.rodape,.acoes,.filtros,#btn-instalar,#btn-sair{display:none !important}
+  .menu,.rodape,.acoes,.filtros,#btn-instalar,#btn-sair{display:none !important}
   body.imprimindo-os .topo,body.imprimindo-os .conteudo{display:none !important}
   body.imprimindo-os .modal{position:static;background:none;display:block}
   body.imprimindo-os .modal .caixa{max-width:none;max-height:none;border-radius:0;background:#fff}
