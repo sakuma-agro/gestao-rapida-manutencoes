@@ -218,8 +218,12 @@ function desenharPainel() {
   if (fSt === 'pendentes') linhas = linhas.filter(m => m.pendentes > 0);
   else if (fSt !== 'todos') linhas = linhas.filter(m => Object.values(m.itens).some(x => x.c.status === fSt));
 
-  linhas.sort((a, b) => (b.urgentes - a.urgentes) || (a.pior - b.pior)
-    || a.equipamento.codigo.localeCompare(b.equipamento.codigo, 'pt-BR', { numeric: true }));
+  /* A frota aparece na ordem do código — T.01, T.02, T.10 — porque é assim que
+     o Guilherme procura a máquina na lista. A urgência já está dita pela cor da
+     célula e pelos filtros de cima; ordenar por ela embaralhava a frota a cada
+     importação de horímetro e ninguém achava mais o bem que queria. */
+  linhas.sort((a, b) =>
+    a.equipamento.codigo.localeCompare(b.equipamento.codigo, 'pt-BR', { numeric: true }));
 
   /* No consolidado a tabela é o assunto: o texto de apoio e os quatro cartões
      encolhem para a frota inteira caber na primeira tela. */

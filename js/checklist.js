@@ -1,5 +1,5 @@
 /* =====================================================================
-   SAKUMA Manutenção — etapa 4: CHECK LIST DE CAMPO
+   Gestão Rápida · Manutenções — etapa 4: CHECK LIST DE CAMPO
 
    O operador preenche no celular (sem sinal), o app:
      1. salva o check list com as respostas congeladas (texto do item de hoje);
@@ -117,7 +117,7 @@ function agendaChecklists() {
   }
   const peso = { atrasado: 0, nunca: 1, hoje: 2, semana: 3, ok: 4 };
   return linhas.sort((a, b) => (peso[a.status] - peso[b.status]) || (b.atraso - a.atraso)
-                            || a.e.codigo.localeCompare(b.e.codigo, 'pt-BR'));
+                            || a.e.codigo.localeCompare(b.e.codigo, 'pt-BR', { numeric: true }));
 }
 
 /* ---------------------------------------------------------------- tela principal */
@@ -689,9 +689,8 @@ function folhaChecklist(e, modelo, opts) {
     ${preenchido ? '<div class="fotos" data-fotos></div>' : ''}
     <div class="rod">
       <span>${preenchido && proximo ? '<strong>Próximo check list: ' + formatarData(proximo) + '</strong>' : 'Periodicidade: a cada ' + dias + ' dias'}</span>
-      <span>SAKUMA Agronegócios · <strong>Guilherme Lopes</strong></span>
+      <span>SAKUMA Agronegócios · <strong>Guilherme Lopes</strong> · Desenvolvido por LOP · Inteligência para o agronegócio</span>
     </div>
-    ${PE_LOP}
   </div>`;
 }
 
