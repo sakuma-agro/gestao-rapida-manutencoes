@@ -1,5 +1,5 @@
 /* =====================================================================
-   SAKUMA Manutenção — etapa 3
+   Gestão Rápida · Manutenções — etapa 3
    Painel de vencimentos e Ordem de Serviço.
 
    A OS impressa responde as quatro perguntas do Guilherme:
@@ -575,11 +575,7 @@ function abrirOS(idOS) {
   const html = `
     <div id="os-impresso">
       <header class="os-topo">
-        <img src="icone.svg" alt="" class="os-logo">
-        <div class="os-marca">
-          <strong>SAKUMA</strong>
-          <span>Agronegócios</span>
-        </div>
+        <img src="sakuma-logo-horizontal.svg" alt="SAKUMA Agronegócios" class="os-logo">
       </header>
       <div class="os-regua"></div>
       <div class="os-titulo">

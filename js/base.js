@@ -1,5 +1,5 @@
 /* =====================================================================
-   SAKUMA Manutenção — núcleo do aplicativo
+   Gestão Rápida · Manutenções — núcleo do aplicativo
    Base local completa em IndexedDB + fila de saída (outbox) + sincronização.
    Regra: nada é considerado salvo até o servidor confirmar.
    ===================================================================== */
@@ -540,6 +540,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       '<strong>Adicionar à Tela de Início</strong>. O app abre em janela própria, sem a barra do navegador.</p>');
   };
   $$('.menu button').forEach(b => b.onclick = () => irPara(b.dataset.tela));
+  // o nome do app no topo funciona como o logotipo de um site: volta ao início
+  const bInicio = $('#btn-inicio');
+  if (bInicio) bInicio.onclick = () => irPara('inicio');
 
   pintarEstado();
   await abrirBase();
