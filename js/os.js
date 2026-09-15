@@ -30,7 +30,8 @@ function calcular(plano) {
   const margem = plano.margem_horas != null ? Number(plano.margem_horas) : margemPadrao();
 
   const r = { equipamento: e, leitura, status: 'SEM_DADO', motivo: '',
-              horas_rodadas: null, horas_restantes: null, dias: null, proximo_hr: null };
+              horas_rodadas: null, horas_restantes: null, dias: null,
+              proximo_hr: null, proxima_data: null };
 
   if (plano.periodicidade_horas != null && plano.ultima_troca_leitura != null) {
     r.proximo_hr = Number(plano.ultima_troca_leitura) + Number(plano.periodicidade_horas);
@@ -41,23 +42,31 @@ function calcular(plano) {
   }
   if (plano.periodicidade_dias != null && plano.ultima_troca_data) {
     r.dias = Math.floor((Date.now() - new Date(plano.ultima_troca_data + 'T00:00:00')) / 86400000);
+    // Em que DIA a próxima troca cai — a outra metade da resposta: item de
+    // calendário não tem horímetro para mostrar, e item de hora com prazo em
+    // dias tem as duas marcas.
+    r.proxima_data = somarDias(plano.ultima_troca_data, Number(plano.periodicidade_dias));
   }
 
+  const u = unidadeDe(e);
   if (r.horas_restantes != null && r.horas_restantes < 0) {
     r.status = 'TROCAR_URGENTE';
-    r.motivo = 'venceu por hora — passou ' + nHoras(Math.abs(r.horas_restantes)) + ' h';
+    r.motivo = 'venceu por ' + (u === 'km' ? 'quilometragem' : 'hora')
+             + ' — passou ' + nHoras(Math.abs(r.horas_restantes)) + ' ' + u;
   } else if (r.horas_restantes != null && r.horas_restantes <= margem) {
     // A margem de segurança tem precedência sobre o período, como na planilha:
     // item dentro da margem aparece como ATENÇÃO mesmo com o prazo em dias vencido.
     r.status = 'ATENCAO';
-    r.motivo = 'margem de segurança — faltam ' + nHoras(r.horas_restantes) + ' h';
+    r.motivo = 'margem de segurança — faltam ' + nHoras(r.horas_restantes) + ' ' + u;
   } else if (r.dias != null && r.dias > plano.periodicidade_dias) {
     r.status = 'PERIODO_VENCIDO';
     const atraso = r.dias - plano.periodicidade_dias;
     r.motivo = 'venceu por período — ' + atraso + (atraso === 1 ? ' dia' : ' dias') + ' além do prazo';
   } else if (r.horas_restantes != null || r.dias != null) {
     r.status = 'OK';
-    r.motivo = r.horas_restantes != null ? 'faltam ' + nHoras(r.horas_restantes) + ' h' : 'dentro do prazo';
+    r.motivo = r.horas_restantes != null
+      ? 'faltam ' + nHoras(r.horas_restantes) + ' ' + u
+      : 'dentro do prazo — vence em ' + formatarData(r.proxima_data);
   } else {
     r.motivo = 'sem última troca lançada';
   }
@@ -80,6 +89,27 @@ function etq(status) {
 function nHoras(v) {
   return v === null || v === undefined ? '—' :
     Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+/* Caminhão anda em km, trator em hora. A unidade vem do bem, nunca do item. */
+function unidadeDe(e) {
+  if (!e) return 'h';
+  if (e.unidade_controle === 'HODOMETRO') return 'km';
+  if (e.unidade_controle === 'ACUMULADO') return e.rege_preventiva === 'KM' ? 'km' : 'h';
+  return 'h';
+}
+
+/* Em que marca a máquina volta para a oficina: o horímetro (ou hodômetro) da
+   próxima troca e, quando o item também tem prazo em dias, a data. Um item de
+   calendário puro só tem a data. É o que o Guilherme pediu para ver no painel
+   sem precisar abrir a OS. */
+function proximaTroca(c, { curto = false } = {}) {
+  const u = unidadeDe(c.equipamento);
+  const partes = [];
+  if (c.proximo_hr != null) partes.push(nHoras(c.proximo_hr) + ' ' + u);
+  if (c.proxima_data) partes.push(formatarData(c.proxima_data));
+  if (!partes.length) return '—';
+  return curto ? partes[0] : partes.join(' · ');
 }
 
 /* ---------------------------------------------------------------- PAINEL */
@@ -201,19 +231,39 @@ function desenharPainel() {
 
 const CURTO = { TROCAR_URGENTE:'URGENTE', PERIODO_VENCIDO:'PERÍODO', ATENCAO:'ATENÇÃO', OK:'OK', SEM_DADO:'—' };
 
+/* O item da máquina que vence primeiro — por hora quando há horímetro, senão
+   pela data. É ele que responde "quando essa máquina volta para a oficina". */
+function proximaDaMaquina(m) {
+  const itens = Object.values(m.itens)
+    .filter(x => x.c.proximo_hr != null || x.c.proxima_data);
+  if (!itens.length) return null;
+  return itens.sort((a, b) => {
+    const ha = a.c.horas_restantes, hb = b.c.horas_restantes;
+    if (ha != null && hb != null) return ha - hb;
+    if (ha != null) return -1;
+    if (hb != null) return 1;
+    return String(a.c.proxima_data).localeCompare(String(b.c.proxima_data));
+  })[0];
+}
+
 function quadro(linhas, colunas) {
   const cab = colunas.map(t => `<th class="num">${esc(t.nome)}</th>`).join('');
   return `<p class="sub">${linhas.length} ${linhas.length === 1 ? 'máquina' : 'máquinas'} ·
       clique na célula para marcar o item</p>
     <div class="rolagem"><table class="tabela quadro"><thead><tr>
       <th>Código</th><th>Máquina / equipamento</th><th class="num">Leitura</th>
+      <th class="num">Próxima troca</th>
       ${cab}<th class="num">Urgentes</th>
     </tr></thead><tbody>` + linhas.map(m => {
       const e = m.equipamento;
+      // A próxima troca da MÁQUINA é a do item que vence primeiro.
+      const prox = proximaDaMaquina(m);
       return `<tr>
         <td class="codigo">${esc(e.codigo)}</td>
         <td>${esc(e.descricao)}</td>
-        <td class="num">${nHoras(leituraDe(e))}</td>
+        <td class="num">${leituraDe(e) == null ? '—' : nHoras(leituraDe(e)) + ' ' + unidadeDe(e)}</td>
+        <td class="num prox">${prox ? `<strong>${proximaTroca(prox.c)}</strong>
+             <span>${esc(q.nome('tipos_manutencao', prox.plano.tipo_manutencao_id))}</span>` : '—'}</td>
         ${colunas.map(t => {
           const x = m.itens[t.id];
           if (!x) return '<td class="cel vazia">—</td>';
@@ -222,9 +272,10 @@ function quadro(linhas, colunas) {
             v.equipamento_id === e.id && v.tipo_manutencao_id === t.id).length;
           return `<td class="cel st-${cls}${marcados.has(x.plano.id) ? ' marcada' : ''}"
                       data-plano="${esc(x.plano.id)}"
-                      title="${esc(x.c.motivo)}${pecas ? ' · ' + pecas + ' peça(s)' : ' · sem peça cadastrada'}">
+                      title="${esc(x.c.motivo)} · próxima troca: ${esc(proximaTroca(x.c))}${pecas ? ' · ' + pecas + ' peça(s)' : ' · sem peça cadastrada'}">
             <strong>${x.c.horas_restantes != null ? nHoras(x.c.horas_restantes) : '—'}</strong>
             <span>${CURTO[x.c.status]}</span>
+            <i>${esc(proximaTroca(x.c, { curto: true }))}</i>
             ${pecas === 0 ? '<em>sem peça</em>' : ''}
           </td>`;
         }).join('')}
@@ -240,17 +291,20 @@ function listaDetalhada(linhas) {
   return `<p class="sub">${itens.length} itens</p>
     <table class="tabela"><thead><tr>
       <th>Máquina</th><th>Item</th><th class="num">Leitura</th><th class="num">Última troca</th>
-      <th class="num">Próximo hr</th><th>Situação</th><th class="num">Peças</th>
+      <th class="num">Próxima troca</th><th>Situação</th><th class="num">Peças</th>
     </tr></thead><tbody>` + itens.map(({plano, c}) => {
       const pecas = q.ativos('pecas_equipamento').filter(v =>
         v.equipamento_id === plano.equipamento_id && v.tipo_manutencao_id === plano.tipo_manutencao_id).length;
       return `<tr class="cel${marcados.has(plano.id) ? ' marcada' : ''}" data-plano="${esc(plano.id)}">
         <td><span class="codigo">${esc(c.equipamento.codigo)}</span><br><small>${esc(c.equipamento.descricao)}</small></td>
         <td>${esc(q.nome('tipos_manutencao', plano.tipo_manutencao_id))}</td>
-        <td class="num">${nHoras(c.leitura)}</td>
+        <td class="num">${c.leitura == null ? '—' : nHoras(c.leitura) + ' ' + unidadeDe(c.equipamento)}</td>
         <td class="num">${plano.ultima_troca_data ? formatarData(plano.ultima_troca_data) : '—'}
             <br><small>${nHoras(plano.ultima_troca_leitura)}</small></td>
-        <td class="num"><strong>${nHoras(c.proximo_hr)}</strong></td>
+        <td class="num prox">${c.proximo_hr != null
+            ? `<strong>${nHoras(c.proximo_hr)} ${unidadeDe(c.equipamento)}</strong>`
+              + (c.proxima_data ? `<br><span>${formatarData(c.proxima_data)}</span>` : '')
+            : (c.proxima_data ? `<strong>${formatarData(c.proxima_data)}</strong>` : '—')}</td>
         <td>${etq(c.status)}<br><small>${esc(c.motivo)}</small></td>
         <td class="num">${pecas === 0 ? '<span class="etq atencao">nenhuma</span>' : pecas}</td>
       </tr>`;
