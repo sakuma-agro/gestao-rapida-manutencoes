@@ -230,6 +230,8 @@ function desenharPainel() {
     : (modoPainel === 'cartoes' ? cartoes(linhas)
       : modoPainel === 'quadro' ? quadro(linhas, colunas) : listaDetalhada(linhas));
 
+  ajustarAltura();
+
   $('#pv-lista').querySelectorAll('[data-plano]').forEach(c => {
     const alterna = () => {
       const id = c.dataset.plano;
@@ -349,6 +351,20 @@ function cartoes(linhas) {
       </article>`;
     }).join('') + '</div>';
 }
+
+/* A altura da tabela é medida, não chutada: ela ocupa o que sobra entre o fim
+   dos filtros e o rodapé fixo. Assim a frota inteira rola dentro do quadro e a
+   página em si não rola — que é o que "tudo numa tela" quer dizer. */
+function ajustarAltura() {
+  const cx = document.querySelector('#pv-lista .rolagem');
+  if (!cx) return;
+  const rodape = document.querySelector('.rodape');
+  const alturaRodape = rodape && getComputedStyle(rodape).position === 'fixed'
+    ? rodape.getBoundingClientRect().height : 0;
+  const sobra = window.innerHeight - cx.getBoundingClientRect().top - alturaRodape - 10;
+  cx.style.maxHeight = Math.max(240, sobra) + 'px';
+}
+window.addEventListener('resize', ajustarAltura);
 
 function quadro(linhas, colunas) {
   const cab = colunas.map(t => `<th>${esc(t.nome)}</th>`).join('');
