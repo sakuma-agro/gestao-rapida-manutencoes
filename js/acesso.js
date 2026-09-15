@@ -18,6 +18,7 @@ const MODULOS = [
   { id: 'manutencao', nome: 'Manutenção', telas: [
     ['inicio', 'Painel'],
     ['vencimentos', 'Vencimentos'],
+    ['manutencoes', 'Manutenções'],
     ['ordens', 'Ordens de serviço'],
     ['anomalias', 'Anomalias'],
   ] },
