@@ -1,10 +1,10 @@
 /* =====================================================================
-   SAKUMA Manutenção — service worker
+   Gestão Rápida · Manutenções — service worker
    Cache-first nos arquivos do app. Mudar CACHE força a atualização
    sem quebrar o app já aberto: o novo só assume depois que fecha.
    ===================================================================== */
 
-const CACHE = 'sakuma-manutencao-v9';
+const CACHE = 'gestao-rapida-manutencoes-v1';
 
 const ARQUIVOS = [
   './',
@@ -18,8 +18,13 @@ const ARQUIVOS = [
   './js/horimetro.js',
   './js/checklist.js',
   './sakuma-logo-horizontal.svg',
-  './icone.svg',
-  './lop-branca.svg',
+  './icons/gr-192.v1.png',
+  './icons/gr-512.v1.png',
+  './icons/gr-180.v1.png',
+  './icons/favicon-gr.v1.ico',
+  './img/sakuma-logo.png',
+  './img/lop-assinatura-laser-claro.png',
+  './img/lop-assinatura-laser-escuro.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js'
 ];
 

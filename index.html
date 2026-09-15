@@ -3,56 +3,60 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SAKUMA Manutenção de Frota</title>
-<meta name="description" content="Manutenção preventiva da frota, implementos e equipamentos da SAKUMA Agronegócios.">
-<meta name="theme-color" content="#1B232B">
+<title>Gestão Rápida (Manutenções) · SAKUMA</title>
+<meta name="description" content="Manutenção preventiva da frota, implementos e equipamentos da SAKUMA Agronegócios: check list, horímetro e ordem de serviço com o código de estoque das peças.">
+<meta name="theme-color" content="#84BD00">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icone.svg">
-<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-gr.v1.ico" sizes="any">
+<link rel="icon" type="image/png" href="icons/gr-192.v1.png">
+<link rel="apple-touch-icon" href="icons/gr-180.v1.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Manutenção">
+<meta name="apple-mobile-web-app-title" content="Gestão Rápida">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 
-<!-- Barra do desenvolvedor: marca LOP branca sobre grafite -->
-<div class="barra-lop">
-  <img src="lop-branca.svg" alt="LOP" class="marca-lop">
-  <div class="estado" id="estado-conexao">
-    <span class="ponto" id="ponto-conexao"></span>
-    <span id="txt-conexao">verificando…</span>
-    <button type="button" id="btn-fila" class="fila oculto">0 aguardando envio</button>
-  </div>
-</div>
-
-<!-- Cabeçalho SAKUMA -->
+<!-- ============================================================
+     TOPO — mesmo padrão do Gestão Rápida (Pessoas).
+     Duas marcas, dois papéis: a SAKUMA é a dona da operação e fica
+     no alto, ao lado do nome do sistema, como o arquivo veio.
+     A LOP assina como desenvolvedora, gravada a laser, só no rodapé —
+     as duas marcas nunca no mesmo lugar.
+     O nome do app é um botão: volta para o início, como o logotipo
+     de um site.
+     ============================================================ -->
 <header class="topo">
-  <div class="marca">
-    <img src="icone.svg" alt="" class="icone">
-    <div>
-      <strong>SAKUMA</strong>
-      <span>Manutenção de Frota</span>
-    </div>
-  </div>
-  <div class="sessao">
+  <div class="topo-int">
+    <button type="button" class="topo-inicio" id="btn-inicio" title="Voltar ao início">
+      <img src="icons/gr-192.v1.png" alt="">
+      <h1>Gestão Rápida <span class="modulo">Manutenções</span></h1>
+    </button>
+    <span class="topo-divisor"></span>
+    <img class="topo-marca" src="img/sakuma-logo.png" alt="SAKUMA Agronegócios">
+    <span class="cresce"></span>
     <span id="lbl-local" class="local"></span>
+    <div class="estado" id="estado-conexao">
+      <span class="ponto" id="ponto-conexao"></span>
+      <span id="txt-conexao">verificando…</span>
+      <button type="button" id="btn-fila" class="fila oculto">0 aguardando envio</button>
+    </div>
     <button type="button" id="btn-instalar" class="btn-fantasma oculto">Instalar o app</button>
     <button type="button" id="btn-sair" class="btn-fantasma oculto">Sair</button>
   </div>
-</header>
 
-<nav class="menu" id="menu" hidden>
-  <button type="button" data-tela="inicio" class="ativo">Início</button>
-  <button type="button" data-tela="equipamentos">Bens</button>
-  <button type="button" data-tela="horimetro">Horímetro</button>
-  <button type="button" data-tela="vencimentos">Vencimentos</button>
-  <button type="button" data-tela="checklist">Check list</button>
-  <button type="button" data-tela="anomalias">Anomalias</button>
-  <button type="button" data-tela="ordens">Ordens de serviço</button>
-  <button type="button" data-tela="pecas">Peças</button>
-  <button type="button" data-tela="vinculos">Peças por máquina</button>
-  <button type="button" data-tela="cadastros">Cadastros</button>
-</nav>
+  <nav class="menu" id="menu" hidden>
+    <button type="button" data-tela="inicio" class="ativo">Início</button>
+    <button type="button" data-tela="equipamentos">Bens</button>
+    <button type="button" data-tela="horimetro">Horímetro</button>
+    <button type="button" data-tela="vencimentos">Vencimentos</button>
+    <button type="button" data-tela="checklist">Check list</button>
+    <button type="button" data-tela="anomalias">Anomalias</button>
+    <button type="button" data-tela="ordens">Ordens de serviço</button>
+    <button type="button" data-tela="pecas">Peças</button>
+    <button type="button" data-tela="vinculos">Peças por máquina</button>
+    <button type="button" data-tela="cadastros">Cadastros</button>
+  </nav>
+</header>
 
 <main id="tela" class="conteudo">
   <section class="carregando">
@@ -61,7 +65,8 @@
 </main>
 
 <footer class="rodape">
-  <span>Desenvolvido por LOP · Inteligência para o agronegócio</span>
+  <img class="rodape-lop" src="img/lop-assinatura-laser-escuro.png"
+       alt="Desenvolvido por LOP — Inteligência para o agronegócio">
 </footer>
 
 <div id="modal" class="modal oculto" role="dialog" aria-modal="true">

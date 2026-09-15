@@ -1,12 +1,14 @@
-# SAKUMA Manutenção de Frota
+# Gestão Rápida · Manutenções — SAKUMA Agronegócios
 
-App de manutenção preventiva da frota, implementos e equipamentos da SAKUMA Agronegócios.
-PWA instalável, offline-first, publicado no GitHub Pages.
+App de manutenção preventiva da frota, implementos e equipamentos da SAKUMA
+Agronegócios (fazendas Faca, Lote 35 PADAP, Morro Branco, Três Riachos e
+Quebra Cocão). Substitui a planilha "NOVO Controle_Troca_Oleo V.01.xlsx".
 
-Banco: Supabase, schema `manutencao`. Antes de usar, preencha a URL do projeto e a chave
-anon em `js/config.js`.
+Antes chamado "SAKUMA Manutenção de Frota"; passou a ser o módulo
+**Manutenções** da família **Gestão Rápida**, junto com o
+[Gestão Rápida (Pessoas)](https://sakuma-agro.github.io/gestao-rapida-pessoas/).
 
-Etapa 1: cadastros, catálogo de peças e o vínculo peça × máquina × tipo de manutenção —
-que é o que faz a ordem de serviço sair com o código de estoque e o part number.
-
-Desenvolvido por LOP · Inteligência para o agronegócio.
+- Endereço: https://sakuma-agro.github.io/gestao-rapida-manutencoes/
+- Banco: Supabase, schema `manutencao`
+- Front-end estático em HTML/CSS/JS puro, PWA instalável, funciona sem internet
+- Desenvolvido pela LOP · Inteligência para o agronegócio
