@@ -328,6 +328,77 @@ body.modo-quadro .rolagem{max-height:calc(100vh - 150px)}
 .cel.st-vencido{background:#FDF0E3;color:var(--vencido)}
 .cel.st-atencao{background:#FFF8E1;color:#8A6400}
 .cel.st-ok{background:#F1F7EA;color:var(--ok)}
+
+/* ---------- planilha ----------------------------------------------------
+   O desenho da "NOVO Controle_Troca_Oleo": bloco de seis colunas por item de
+   manutenção, cabeçalho em três andares (item / última-próxima / campo) e o
+   STATUS pintado cheio, como as células coloridas do Excel. Código e
+   descrição ficam grudados à esquerda enquanto os blocos correm ao lado. */
+.pl{border-collapse:separate;border-spacing:0;min-width:1100px}
+.pl th{
+  position:sticky;z-index:3;text-align:center;vertical-align:middle;
+  font-size:11px;padding:5px 6px;letter-spacing:.02em;
+  border-left:1px solid rgba(255,255,255,.35);
+}
+.pl thead tr:nth-child(1) th{top:0;height:26px}
+.pl thead tr:nth-child(2) th{top:26px;height:22px}
+.pl thead tr:nth-child(3) th{top:48px;height:30px}
+
+/* o nome do item manda no bloco: faixa mais escura, como na planilha */
+.pl th.bl-tipo{
+  background:var(--verde-lop);color:var(--branco);font-size:12px;
+  text-transform:uppercase;border-left:2px solid var(--branco);
+}
+.pl th.bl-ult{background:var(--verde-escuro);color:var(--branco)}
+.pl th.bl-prox{background:var(--cinza);color:var(--branco)}
+.pl thead tr.campos th{background:var(--verde);color:var(--branco);font-weight:bold}
+.pl thead tr.campos th.bl-ult{background:var(--verde-escuro)}
+
+.pl thead th.col-cod,.pl thead th.col-maq,.pl thead th.agora{
+  background:var(--verde-lop);color:var(--branco);z-index:6;
+}
+/* Os deslocamentos das colunas grudadas são medidos em tela (grudarColunas),
+   porque a descrição da máquina não tem largura fixa: chutar o valor fazia a
+   coluna DATA ÚLTIMA sumir por baixo do AGORA. */
+.pl th.col-cod{left:0}
+.pl th.col-maq{left:var(--l1,56px);text-align:left}
+.pl th.agora{left:var(--l2,266px)}
+
+.pl td{
+  padding:4px 7px;font-size:12.5px;border-top:1px solid var(--linha);
+  white-space:nowrap;cursor:pointer;user-select:none;
+}
+.pl .col-cod{position:sticky;left:0;z-index:2;width:56px;font-weight:bold}
+.pl .col-maq{position:sticky;left:var(--l1,56px);z-index:2;min-width:220px;max-width:280px;
+             white-space:normal;line-height:1.15}
+.pl .agora{position:sticky;left:var(--l2,266px);z-index:2;width:92px;font-weight:bold;
+           box-shadow:2px 0 0 var(--linha)}
+.pl tbody .col-cod,.pl tbody .col-maq,.pl tbody .agora{background:var(--branco);cursor:default}
+.pl .col-maq small{display:block;font-size:10px;color:var(--cinza-claro)}
+.pl .agora small{font-weight:normal;color:var(--cinza-claro);font-size:10px;margin-left:3px}
+
+/* o que já foi feito vem em verde sobre fundo claro, como na planilha dele */
+.pl .pl-ult{background:#F1F7EA;color:var(--ok);border-left:2px solid var(--linha)}
+.pl .falta.neg{color:var(--urgente);font-weight:bold}
+.pl .pl-vazia{
+  text-align:center;color:var(--linha);background:#FCFCFA;cursor:default;
+  border-left:2px solid var(--linha);
+}
+
+/* STATUS: célula cheia, texto branco — é o que o olho procura primeiro */
+.pl .pl-status{
+  text-align:center;font-weight:bold;font-size:11px;color:var(--branco);
+  letter-spacing:.03em;min-width:118px;
+}
+.pl .pl-status.st-ok{background:var(--ok)}
+.pl .pl-status.st-urgente{background:var(--urgente)}
+.pl .pl-status.st-vencido{background:var(--vencido)}
+.pl .pl-status.st-atencao{background:var(--atencao)}
+.pl .pl-status.st-neutro{background:var(--cinza-claro)}
+
+/* marcado para a OS: contorno marrom, a mesma tinta do resto do app */
+.pl td.marcada{box-shadow:inset 0 2px 0 var(--marrom),inset 0 -2px 0 var(--marrom)}
+.pl tbody tr:hover td{filter:brightness(.98)}
 .cel.st-neutro{background:#F7F7F5;color:var(--cinza-claro)}
 .cel.marcada{outline:3px solid var(--verde);outline-offset:-3px;font-weight:bold}
 .legenda .lg.st-urgente{background:#FBE9E7;color:var(--urgente);border-color:#F3C9C3}
