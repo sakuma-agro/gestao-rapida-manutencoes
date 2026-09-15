@@ -309,7 +309,15 @@ tr.cel.marcada td{background:#F1F7EA}
 .os-ass{margin:0;font-size:11px;color:var(--cinza)}
 .os-ass span{color:var(--cinza-claro)}
 .os-empresa{margin:2px 0 0;font-size:11px;color:var(--cinza-claro)}
-.os-lop{font-size:10px;color:var(--cinza-claro);margin:8px 0 0}
+/* ---------- assinatura da LOP no pé dos relatórios ----------
+   O mesmo desenho do app Gestão Rápida (Pessoas): o símbolo e, ao lado, a
+   frase de desenvolvedor em letra de nota de rodapé. O arquivo da marca tem a
+   cabeça do lobo em cima e o wordmark embaixo, então o meio da caixa fica
+   acima do meio das letras — os 4 px descem a frase até o meio do "LOP".
+   Sem "desenvolvido por": quem assina o conteúdo é a SAKUMA. */
+.pe-lop{margin-top:10px;display:flex;align-items:center;justify-content:flex-end;gap:7px;line-height:0}
+.pe-lop img{height:19px;width:auto;opacity:.7}
+.pe-lop span{font-size:8px;line-height:1;color:var(--cinza-claro);letter-spacing:.2px;transform:translateY(4px)}
 
 /* ---------- impressão A4 ---------- */
 @media print{
