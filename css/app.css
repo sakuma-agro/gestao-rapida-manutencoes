@@ -271,6 +271,11 @@ legend{padding:0 8px;font-weight:bold;font-size:14px;color:var(--marrom)}
 .quadro .cel span{display:block;font-size:10px;letter-spacing:.03em;font-weight:bold}
 .quadro .cel em{display:block;font-size:10px;font-style:normal;color:var(--marrom)}
 .quadro .cel.vazia{color:var(--linha);cursor:default;background:#FCFCFA}
+/* A marca da próxima troca: em que horímetro (ou data) a máquina volta para a
+   oficina. Fica discreta dentro da célula — o que salta é quanto falta. */
+.quadro .cel i{display:block;font-size:10px;font-style:normal;color:var(--cinza-claro);margin-top:1px}
+.tabela .prox strong{color:var(--marrom)}
+.tabela .prox span{font-size:12.5px;color:var(--cinza-claro)}
 .cel.st-urgente{background:#FBE9E7;color:var(--urgente)}
 .cel.st-vencido{background:#FDF0E3;color:var(--vencido)}
 .cel.st-atencao{background:#FFF8E1;color:#8A6400}
@@ -309,15 +314,7 @@ tr.cel.marcada td{background:#F1F7EA}
 .os-ass{margin:0;font-size:11px;color:var(--cinza)}
 .os-ass span{color:var(--cinza-claro)}
 .os-empresa{margin:2px 0 0;font-size:11px;color:var(--cinza-claro)}
-/* ---------- assinatura da LOP no pé dos relatórios ----------
-   O mesmo desenho do app Gestão Rápida (Pessoas): o símbolo e, ao lado, a
-   frase de desenvolvedor em letra de nota de rodapé. O arquivo da marca tem a
-   cabeça do lobo em cima e o wordmark embaixo, então o meio da caixa fica
-   acima do meio das letras — os 4 px descem a frase até o meio do "LOP".
-   Sem "desenvolvido por": quem assina o conteúdo é a SAKUMA. */
-.pe-lop{margin-top:10px;display:flex;align-items:center;justify-content:flex-end;gap:7px;line-height:0}
-.pe-lop img{height:19px;width:auto;opacity:.7}
-.pe-lop span{font-size:8px;line-height:1;color:var(--cinza-claro);letter-spacing:.2px;transform:translateY(4px)}
+.os-lop{font-size:10px;color:var(--cinza-claro);margin:8px 0 0}
 
 /* ---------- impressão A4 ---------- */
 @media print{
@@ -578,4 +575,115 @@ body.sem-rodape .conteudo{padding-bottom:24px}
 @media (max-width:640px){
   .menu2{padding:6px 12px}
   .us-telas{margin-left:0}
+}
+
+/* =====================================================================
+   PAINEL DE VENCIMENTOS EM CARTÕES
+   Um cartão por máquina: o horímetro de agora em cima, e dentro um item
+   por linha de manutenção. Cada item responde sempre na mesma ordem —
+   última troca, próxima troca, quanto falta — e a barra mostra quanto do
+   intervalo já foi rodado, que é o que se lê de relance, sem número.
+   ===================================================================== */
+/* align-items:start para o cartão ter a altura do que ele tem dentro —
+   máquina de um item só não vira um retângulo vazio do lado de outra de seis */
+.cartoes{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));
+  gap:14px;align-items:start;
+}
+
+.mq{
+  background:var(--branco);border:1px solid var(--linha);border-radius:var(--raio);
+  overflow:hidden;
+}
+/* máquina com item vencido ganha a tarja marrom na lateral: dá para varrer a
+   tela e achar quem precisa de oficina sem ler nada */
+.mq.urgente{border-left:5px solid var(--urgente)}
+
+.mq-topo{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 14px;border-bottom:1px solid var(--linha);background:#FAFBF7;
+}
+.mq-quem{min-width:0}
+.mq-quem .codigo{font-size:17px;margin-right:8px}
+.mq-quem strong{font-weight:normal;font-size:15px;color:var(--cinza)}
+.mq-quem small{display:block;font-size:12.5px;color:var(--cinza-claro);margin-top:1px}
+.mq-leitura{text-align:right;white-space:nowrap}
+.mq-leitura b{display:block;font-size:20px;line-height:1.1;color:var(--cinza)}
+.mq-leitura span{font-size:11.5px;color:var(--cinza-claro);letter-spacing:.03em}
+
+.mq-itens{padding:4px 0}
+
+/* ---------- o item ---------- */
+.it{
+  padding:10px 14px;border-top:1px solid #EFF1EA;cursor:pointer;
+  border-left:4px solid transparent;
+}
+.mq-itens .it:first-child{border-top:0}
+.it:hover{background:#FAFBF7}
+.it:focus-visible{outline:3px solid var(--marrom);outline-offset:-3px}
+.it.st-urgente{border-left-color:var(--urgente)}
+.it.st-vencido{border-left-color:var(--vencido)}
+.it.st-atencao{border-left-color:var(--atencao)}
+.it.st-ok{border-left-color:var(--ok)}
+.it.st-neutro{border-left-color:var(--linha)}
+.it.marcada{background:rgba(132,189,0,.12);border-left-color:var(--verde)}
+
+.it-topo{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.it-topo b{font-size:15px;color:var(--cinza)}
+
+/* três blocos na mesma ordem em todo item: o olho aprende o lugar e para de
+   procurar. O do meio é a resposta que ele pediu — em que marca troca. */
+/* as três respostas em colunas fixas: o olho decora o lugar e para de
+   procurar de item para item */
+.it-linha{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));
+  gap:6px 14px;margin:6px 0 8px;
+}
+.it-dado{font-size:13.5px;color:var(--cinza)}
+.it-dado i{
+  display:block;font-style:normal;font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--cinza-claro);
+}
+.it-dado.forte{font-weight:bold;color:var(--marrom)}
+.it-dado.tarde{color:var(--urgente);font-weight:bold}
+
+.it-barra{height:6px;border-radius:4px;background:#EDEFE6;overflow:hidden}
+.it-barra span{display:block;height:100%;background:var(--ok);border-radius:4px}
+.it.st-atencao .it-barra span{background:var(--atencao)}
+.it.st-vencido .it-barra span{background:var(--vencido)}
+.it.st-urgente .it-barra span{background:var(--urgente)}
+.it.st-neutro .it-barra span{background:var(--linha)}
+
+.it-pe{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-top:7px;font-size:12px;color:var(--cinza-claro);
+}
+.it-pe em{font-style:normal;color:var(--marrom);font-weight:bold}
+.it-marcar{
+  border:1px solid var(--linha);border-radius:20px;padding:2px 10px;
+  font-size:11.5px;color:var(--cinza-claro);white-space:nowrap;
+}
+.it.marcada .it-marcar{border-color:var(--verde);color:var(--verde-escuro);font-weight:bold}
+
+@media (max-width:640px){
+  .cartoes{grid-template-columns:1fr;gap:12px}
+  .mq-quem .codigo{font-size:16px}
+  .mq-leitura b{font-size:18px}
+  .it-linha{gap:6px 16px}
+}
+
+/* A barra de ação do painel gruda no pé da tela enquanto houver item marcado:
+   no celular a lista é longa e o botão ficava lá em cima, fora de alcance. */
+.pv-acoes{
+  position:sticky;bottom:0;z-index:5;margin:0 -14px 14px;padding:10px 14px;
+  background:var(--branco);border-top:1px solid var(--linha);
+  box-shadow:0 -6px 12px rgba(0,0,0,.05);
+}
+@media (max-width:640px){
+  /* min-width:0 deixa o select encolher: sem isso o texto da opção segura a
+     largura e cada filtro come uma linha inteira do celular */
+  .filtros select{flex:1 1 45%;min-width:0}
+  .cartao{padding:11px 12px}
+  .cartao b{font-size:22px}
+  .pv-acoes .btn{flex:1 1 100%}
 }
