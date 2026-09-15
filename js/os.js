@@ -221,6 +221,10 @@ function desenharPainel() {
   linhas.sort((a, b) => (b.urgentes - a.urgentes) || (a.pior - b.pior)
     || a.equipamento.codigo.localeCompare(b.equipamento.codigo, 'pt-BR', { numeric: true }));
 
+  /* No consolidado a tabela é o assunto: o texto de apoio e os quatro cartões
+     encolhem para a frota inteira caber na primeira tela. */
+  document.body.classList.toggle('modo-quadro', modoPainel === 'quadro');
+
   $('#pv-lista').innerHTML = linhas.length === 0
     ? '<div class="vazio"><p>Nada com esses filtros.</p></div>'
     : (modoPainel === 'cartoes' ? cartoes(linhas)
@@ -378,7 +382,10 @@ function quadro(linhas, colunas) {
           return `<td class="cel st-${cls}${marcados.has(p.id) ? ' marcada' : ''}"
                       data-plano="${esc(p.id)}"
                       title="${esc(q.nome('tipos_manutencao', t.id))} · ${esc(c.motivo)}${pecas ? ' · ' + pecas + ' peça(s)' : ' · sem peça cadastrada'}">
-            <strong>${esc(proximaTroca(c, { curto: true }))}${pecas === 0 ? '<i title="sem peça cadastrada">•</i>' : ''}</strong>
+            <strong>${esc(proximaTroca(c, { curto: true }))}${
+              /* o ponto só faz sentido quando existe marca de troca para imprimir na OS */
+              pecas === 0 && c.proximo_hr == null && !c.proxima_data
+                ? '' : (pecas === 0 ? '<i title="sem peça cadastrada">•</i>' : '')}</strong>
             <span>${CURTO[c.status]} · ${esc(falta.txt)}</span>
           </td>`;
         }).join('')}

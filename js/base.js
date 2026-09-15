@@ -584,6 +584,8 @@ function irPara(nome) {
     return mostrarInicio();
   }
   if (nome !== 'marca') document.body.classList.remove('sem-rodape');
+  // o modo compacto pertence ao painel consolidado; sair dele desfaz
+  if (nome !== 'vencimentos') document.body.classList.remove('modo-quadro');
   if (window.marcarMenu) marcarMenu(nome);
   const fn = TELAS[nome];
   if (fn) fn($('#tela'));
