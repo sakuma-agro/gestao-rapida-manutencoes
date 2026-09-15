@@ -75,12 +75,31 @@ function promessa(req) {
 
 /* A tabela parametros tem "chave" como identificador, não "id". */
 const CHAVE_PK = { parametros: 'chave' };
+
+/* Tabelas de ligação não têm id próprio: a chave é o par de ids. Sem isto o
+   IndexedDB recusa a linha inteira ("key path yielded a value that is not a
+   valid key") e derruba a carga da base toda. Só leitura — o app não grava
+   nessas tabelas. */
+const CHAVE_COMPOSTA = { checklist_equipamento: ['equipamento_id', 'modelo_id'] };
+
 function pk(tabela) { return CHAVE_PK[tabela] || 'id'; }
-function idDe(tabela, registro) { return registro[pk(tabela)]; }
+function idDe(tabela, registro) {
+  const partes = CHAVE_COMPOSTA[tabela];
+  if (partes) return partes.map(c => registro[c]).join('|');
+  return registro[pk(tabela)];
+}
 
 async function gravarLocal(tabela, linhas) {
   const s = tx('cache', 'readwrite');
-  for (const l of linhas) s.put({ tabela, id: idDe(tabela, l), dado: l });
+  for (const l of linhas) {
+    const id = idDe(tabela, l);
+    // uma linha sem chave não pode derrubar a gravação das outras
+    if (id === undefined || id === null || id === '') {
+      console.warn('linha sem chave, não gravada localmente:', tabela, l);
+      continue;
+    }
+    s.put({ tabela, id, dado: l });
+  }
   return new Promise(ok => { s.transaction.oncomplete = () => ok(true); });
 }
 
