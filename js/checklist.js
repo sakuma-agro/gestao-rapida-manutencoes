@@ -735,8 +735,8 @@ async function abrirRelatorioChecklist(ckId) {
   abrirModal('Check list ' + (ck.numero ? 'nº ' + ck.numero : '') + ' — ' + e.codigo, `
     <div id="os-impresso">${folhaChecklist(e, modelo, { ck })}</div>
     <div class="acoes">
-      <button type="button" class="btn" id="rc-imprimir">Imprimir / salvar PDF</button>
-      <button type="button" class="btn secundario" id="rc-zap">Enviar ao responsável</button>
+      <button type="button" class="btn btn-zap" id="rc-zap"><img class="ic-zap" src="img/whatsapp.png" alt="">Enviar ao responsável</button>
+      <button type="button" class="btn btn-pdf" id="rc-imprimir">Imprimir / salvar PDF</button>
       ${anomalias.length ? '<button type="button" class="btn neutro" id="rc-anom">Ver anomalias</button>' : ''}
     </div>
     ${ck.enviado_whatsapp_em ? `<p class="sub">Enviado em ${new Date(ck.enviado_whatsapp_em).toLocaleString('pt-BR')} para ${esc(ck.enviado_whatsapp_para || '')}.</p>` : ''}`,

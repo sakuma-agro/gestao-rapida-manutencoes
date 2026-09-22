@@ -164,18 +164,50 @@ function primeiraTela() {
 
 /* ---------------------------------------------------------------- tela de marca */
 
+/* Acesso rápido na lateral (mesmo modelo do Programação Campo): ícone grande,
+   nome embaixo. Só aparece o que a pessoa tem permissão de abrir. */
+const ICONE_ATALHO = {
+  check: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 11l2 2 4-4M9 17h6"/>',
+  painel: '<path d="M5 20V10M11 20V4M17 20v-7"/>',
+  venc: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 13v3l2 1"/>',
+  os: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+  anomalia: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.01"/>',
+  horimetro: '<circle cx="12" cy="13" r="8"/><path d="M12 13l4-3M9 2h6"/>',
+  bens: '<rect x="3" y="11" width="18" height="6" rx="2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M6 11l2-5h8l2 5"/>',
+};
+const ATALHOS_INICIO = [
+  ['checklist', 'check', 'Check list', 'prim'],
+  ['inicio', 'painel', 'Painel'],
+  ['vencimentos', 'venc', 'Vencimentos'],
+  ['ordens', 'os', 'Ordens de serviço'],
+  ['anomalias', 'anomalia', 'Anomalias'],
+  ['horimetro', 'horimetro', 'Horímetro'],
+  ['equipamentos', 'bens', 'Bens'],
+];
+
 TELAS.marca = el => {
   // Na tela de entrada a assinatura da LOP é a grande, no meio: o rodapé fixo
   // sai de cena para a marca não aparecer duas vezes na mesma página.
   document.body.classList.add('sem-rodape');
+  const atalhos = ATALHOS_INICIO.filter(([t]) => podeTela(t));
   el.innerHTML = `
-    <section class="marca-inicio">
-      <img class="mi-sakuma" src="img/sakuma-marca-vertical.png" alt="SAKUMA Agronegócios">
-      <h2>Gestão Rápida <span>Manutenções</span></h2>
-      <p class="mi-dica">Escolha um módulo no menu acima para começar.</p>
-      <img class="mi-lop" src="img/lop-assinatura-laser-escuro.png"
-           alt="Desenvolvido por LOP — Inteligência para o agronegócio">
-    </section>`;
+    <div class="ini-lateral">
+      <nav class="ql" aria-label="Acesso rápido">
+        ${atalhos.map(([t, ic, rot, cl]) => `<button type="button" class="ql-item ${cl || ''}" data-ir="${t}" title="${esc(rot)}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONE_ATALHO[ic]}</svg>
+          <span>${esc(rot)}</span></button>`).join('')}
+      </nav>
+      <section class="marca-inicio">
+        <img class="mi-sakuma" src="img/sakuma-marca-vertical.png" alt="SAKUMA Agronegócios">
+        <h2>Gestão Rápida <span>Manutenções</span></h2>
+        <p class="mi-dica">Escolha um atalho ao lado ou um módulo no menu acima.</p>
+        <div class="lop-ass mi-lop" role="img" aria-label="Desenvolvido por LOP — Inteligência para o agronegócio">
+          <img src="img/lop-marca.png" alt=""><span class="lop-div"></span>
+          <span class="lop-txt"><b>DESENVOLVIDO POR LOP</b><span>INTELIGÊNCIA PARA O AGRONEGÓCIO</span></span>
+        </div>
+      </section>
+    </div>`;
+  el.querySelectorAll('[data-ir]').forEach(b => b.onclick = () => irPara(b.dataset.ir));
 };
 
 /* ---------------------------------------------------------------- configurações */
