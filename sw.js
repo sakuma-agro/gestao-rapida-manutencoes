@@ -4,7 +4,7 @@
    sem quebrar o app já aberto: o novo só assume depois que fecha.
    ===================================================================== */
 
-const CACHE = 'gestao-rapida-manutencoes-v18';
+const CACHE = 'gestao-rapida-manutencoes-v19';
 
 const ARQUIVOS = [
   './',
@@ -28,6 +28,8 @@ const ARQUIVOS = [
   './img/sakuma-marca-vertical.png',
   './img/lop-assinatura-laser-claro.png',
   './img/lop-assinatura-laser-escuro.png',
+  './img/lop-marca.png',
+  './img/whatsapp.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js'
 ];
 
