@@ -832,3 +832,38 @@ body.sem-rodape .conteudo{padding-bottom:24px}
   .cartao b{font-size:22px}
   .pv-acoes .btn{flex:1 1 100%}
 }
+
+/* ---------- tela inicial: acesso rápido na lateral (mesmo modelo do Programação Campo) ---------- */
+.ini-lateral{display:flex;gap:24px;align-items:flex-start}
+.ini-lateral .marca-inicio{flex:1;min-height:0;justify-content:flex-start;padding-top:clamp(20px,7vh,80px)}
+.ql{width:96px;flex:none;display:flex;flex-direction:column;gap:10px}
+.ql-item{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:76px;
+  padding:12px 4px;border-radius:10px;background:var(--branco);border:1px solid var(--linha);color:var(--cinza);
+  font:inherit;font-size:11.5px;font-weight:bold;line-height:1.2;text-align:center;cursor:pointer}
+.ql-item svg{width:26px;height:26px;flex:none}
+.ql-item:hover{border-color:#B9CC8E;background:#F1F7E6}
+.ql-item.prim{background:var(--verde);border-color:var(--verde);color:#fff}
+.ql-item.prim:hover{background:var(--verde-escuro)}
+@media (max-width:700px){
+  .ini-lateral{flex-direction:column;gap:6px}
+  .ql{width:100%;flex-direction:row;overflow-x:auto;padding-bottom:4px}
+  .ql-item{min-width:86px}
+  .ini-lateral .marca-inicio{padding-top:24px}
+}
+/* assinatura LOP em texto, tamanho intermediário (antes era imagem com letra miúda) */
+.lop-ass{display:flex;align-items:center;gap:12px;color:#1B232B;--h:38px}
+.lop-ass img{height:var(--h);width:auto;display:block;mix-blend-mode:multiply}
+.lop-div{width:2px;align-self:stretch;min-height:calc(var(--h) * .9);background:#1B232B;border-radius:1px}
+.lop-txt{display:flex;flex-direction:column;line-height:1.25;text-align:left}
+.lop-txt b{font-size:13.5px;letter-spacing:1.5px}
+.lop-txt span{font-size:10.5px;letter-spacing:1.1px;color:#3A4249}
+.mi-lop.lop-ass{width:auto;margin:44px auto 0}
+@media (max-width:560px){ .lop-ass{--h:32px;gap:10px} .lop-txt b{font-size:11.5px;letter-spacing:1.1px} .lop-txt span{font-size:9px;letter-spacing:.8px} }
+
+/* botões: WhatsApp nas cores dele (com a logo), PDF em cinza, texto centralizado */
+.btn.btn-zap,.btn.btn-pdf{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;text-align:center}
+.btn.btn-zap{background:#25D366;color:#fff}
+.btn.btn-zap:hover{background:#1EBE5A}
+.btn.btn-zap .ic-zap{width:26px;height:26px;flex:none;border-radius:6px;background:#fff;display:block}
+.btn.btn-pdf{background:#ECEDE8;color:var(--cinza);border:1px solid #D3D5CD}
+.btn.btn-pdf:hover{background:#E1E3DC}
