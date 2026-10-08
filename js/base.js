@@ -14,24 +14,22 @@ const App = {
 };
 
 /* Tabelas que o app baixa inteiras para funcionar sem sinal.
-   Sem isto o mecânico abre a OS no pátio e não vê o código da peça. */
+   Sem isto o mecânico abre a OS no pátio e não vê qual óleo e filtro usar. */
 const TABELAS_BASE = [
-  'locais', 'setores', 'tipos_equipamento', 'campos_tecnicos', 'tipos_manutencao',
-  'marcas', 'fornecedores', 'mecanicos', 'listas_auxiliares', 'parametros',
-  'equipamentos', 'pecas', 'pecas_equipamento', 'planos_manutencao',
-  // Etapa 4: o check list é preenchido no campo, sem sinal. Modelos, versões,
-  // grupos e itens vêm inteiros; os check lists já feitos alimentam a agenda.
+  'locais', 'setores', 'tipos_equipamento', 'tipos_manutencao', 'marcas', 'parametros',
+  'equipamentos', 'planos_manutencao',
+  // O check list é preenchido no campo, sem sinal.
   'checklist_modelos', 'checklist_versoes', 'checklist_grupos', 'checklist_itens',
   'checklist_equipamento', 'checklists', 'checklist_respostas', 'checklist_fotos',
   'responsaveis_manutencao',
-  // Etapa 3: o mecânico precisa abrir a OS no pátio, sem sinal.
-  'ordens_servico', 'os_itens', 'os_pecas', 'manutencoes', 'anomalias'
+  // O mecânico abre a OS no pátio, sem sinal.
+  'ordens_servico', 'os_itens', 'manutencoes'
 ];
 
 /* Colunas que o BANCO gera (identity ALWAYS). Nunca vão no envio: o Postgres
    recusa INSERT/UPSERT com valor nelas. Depois do OK o app lê o número de volta. */
 const GERADAS_NO_BANCO = {
-  anomalias: ['numero'], checklists: ['numero'], ordens_servico: ['numero']
+  checklists: ['numero'], ordens_servico: ['numero']
 };
 
 /* ---------------------------------------------------------------- IndexedDB */
@@ -584,8 +582,6 @@ function irPara(nome) {
     return mostrarInicio();
   }
   if (nome !== 'marca') document.body.classList.remove('sem-rodape');
-  // o modo compacto pertence ao painel consolidado; sair dele desfaz
-  if (nome !== 'vencimentos') document.body.classList.remove('modo-quadro');
   if (window.marcarMenu) marcarMenu(nome);
   const fn = TELAS[nome];
   if (fn) fn($('#tela'));

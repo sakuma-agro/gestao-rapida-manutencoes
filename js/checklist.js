@@ -3,7 +3,7 @@
 
    O operador preenche no celular (sem sinal), o app:
      1. salva o check list com as respostas congeladas (texto do item de hoje);
-     2. abre uma anomalia para cada item reprovado, sem duplicar reincidência;
+     2. abre uma OS CORRETIVA para cada item reprovado, sem duplicar reincidência;
      3. gera o relatório A4 com as não conformidades PRIMEIRO;
      4. manda ao responsável pela manutenção por WhatsApp.
    A mesma folha sai impressa em branco para quem prefere marcar no papel.
@@ -34,7 +34,7 @@ function rotuloResposta(item, valor) {
   const o = opcaoDe(item, valor); return o ? o.rot : (valor ?? '');
 }
 
-/* Regra da anomalia: RUIM (ou equivalente) sempre abre; MÉDIO abre se o
+/* Regra da OS corretiva: RUIM (ou equivalente) sempre abre; MÉDIO abre se o
    parâmetro mandar; Sim/Não só quando o item diz qual resposta reprova. */
 function geraAnomalia(item, valor) {
   if (!valor) return false;
@@ -45,17 +45,7 @@ function geraAnomalia(item, valor) {
   return false;
 }
 
-function parametro(chave, padrao) {
-  const p = q.todos('parametros').find(x => x.chave === chave);
-  return p && p.valor != null ? p.valor : padrao;
-}
-function hoje() { return new Date().toISOString().slice(0, 10); }
-function somarDias(data, n) {
-  const d = new Date(data + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10);
-}
-function diasEntre(a, b) { // b - a, em dias
-  return Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000);
-}
+/* parametro, hoje, somarDias e diasEntre ficam em js/comum.js */
 
 /* ---------------------------------------------------------------- modelo × máquina */
 
@@ -128,7 +118,7 @@ TELAS.checklist = el => {
   el.innerHTML = `
     <h1>Check list de campo</h1>
     <p class="sub">Preencha no celular ou imprima a folha em branco. Ao finalizar, cada item
-       reprovado vira anomalia aberta e o relatório sai pronto para o WhatsApp.</p>
+       reprovado vira uma OS corretiva aberta e o relatório sai pronto para o WhatsApp.</p>
     <div class="abas">
       <button type="button" data-aba="agenda">Agenda</button>
       <button type="button" data-aba="realizados">Realizados</button>
@@ -252,14 +242,14 @@ function desenharRealizados(el) {
       ? '<div class="vazio"><p>Nenhum check list registrado ainda.</p></div>'
       : sel.map(c => {
         const e = q.por_id('equipamentos', c.equipamento_id) || {};
-        const anom = q.todos('anomalias').filter(a => a.checklist_id === c.id).length;
+        const anom = q.todos('ordens_servico').filter(o => o.checklist_id === c.id).length;
         const cls = { 'Liberada': 'ok', 'Liberada com ressalva': 'atencao', 'Máquina parada': 'urgente' }[c.resultado_geral] || 'neutro';
         return `<li>
           <div class="info">
             <strong>${c.numero ? 'Nº ' + c.numero + ' · ' : ''}<span class="codigo">${esc(e.codigo)}</span> ${esc(e.descricao)}</strong>
             <small>${formatarData(c.data_verificacao)} · ${esc(c.operador || '')} ·
               ${c.total_bom} bom · ${c.total_medio} médio · ${c.total_ruim} ruim
-              ${anom ? ' · ' + anom + (anom === 1 ? ' anomalia' : ' anomalias') : ''}
+              ${anom ? ' · ' + anom + (anom === 1 ? ' OS corretiva' : ' OS corretivas') : ''}
               ${c.enviado_whatsapp_em ? ' · enviado' : (anom ? ' · <span style="color:var(--urgente)">não enviado</span>' : '')}</small>
           </div>
           <span class="etq ${cls}">${esc(c.resultado_geral || '')}</span>
@@ -294,7 +284,7 @@ async function urlFoto(caminho) {
 async function preencherChecklist(eId) {
   const e = q.por_id('equipamentos', eId);
   const { modelo, vinculo } = modeloDaMaquina(e);
-  if (!modelo) return aviso('Esta máquina não tem modelo de check list. Vincule um em Cadastros.', true);
+  if (!modelo) return aviso('Esta máquina não tem modelo de check list para o tipo dela.', true);
   const versao = versaoVigente(modelo.id);
   if (!versao) return aviso('O modelo "' + modelo.nome + '" não tem versão vigente.', true);
 
@@ -499,7 +489,7 @@ async function finalizarChecklist(e, modelo, vinculo, versao, grupos, r) {
     ${leituraMenor ? `<p class="os-alerta">O horímetro informado (${leitura.toLocaleString('pt-BR')}) é <strong>menor</strong> que a última
       leitura (${Number(e.leitura_atual).toLocaleString('pt-BR')}). Ele fica registrado no check list, mas não atualiza a máquina.
       Se o aparelho foi trocado, registre em Lançar horímetro.</p>` : ''}
-    <p class="ajuda">Ao finalizar: ${ruim ? ruim + (ruim === 1 ? ' anomalia é aberta' : ' anomalias são abertas') : 'nenhuma anomalia é aberta'},
+    <p class="ajuda">Ao finalizar: ${ruim ? ruim + (ruim === 1 ? ' OS corretiva é aberta' : ' OS corretivas são abertas') : 'nenhuma OS corretiva é aberta'},
        o relatório fica pronto e o próximo check list vence em ${formatarData(somarDias(r.data, periodicidadeDias(e, modelo, vinculo)))}.</p>
     <div class="acoes">
       <button type="button" class="btn" id="fz-ok">Finalizar e gerar relatório</button>
@@ -547,8 +537,7 @@ async function gravarChecklist(e, modelo, vinculo, versao, grupos, r, t) {
     preenchido_em: r.iniciado_em || agora, criado_por: App.usuario.id || null
   });
 
-  // 3. Respostas com o texto congelado + fotos + anomalias
-  const limite = Number(parametro('reincidencia_sobe_prioridade', 3)) || 3;
+  // 3. Respostas com o texto congelado + fotos + OS corretivas
   for (const { g, itens } of grupos) {
     for (const it of itens) {
       const x = r.respostas[it.id] || {};
@@ -562,36 +551,24 @@ async function gravarChecklist(e, modelo, vinculo, versao, grupos, r, t) {
         await gravar('checklist_fotos', { id: crypto.randomUUID(), resposta_id: respId, checklist_id: ckId, storage_path: c, enviada_em: agora });
 
       if (!geraAnomalia(it, x.v)) continue;
-      const grau = grauDe(it, x.v);
-      // Reincidência: item que já tem anomalia aberta não duplica, sobe o contador.
-      const aberta = q.todos('anomalias').find(a => a.equipamento_id === e.id && a.checklist_item_id === it.id && a.status !== 'Fechado');
+      const problema = `${it.texto}: ${x.obs || rotuloResposta(it, x.v)}`;
+      // Reincidência: item que já tem OS corretiva aberta não abre outra — anota na mesma.
+      const aberta = q.todos('ordens_servico').find(o => o.equipamento_id === e.id && o.tipo === 'CORRETIVA'
+        && o.checklist_item_id === it.id && ['ABERTA', 'EM_EXECUCAO'].includes(o.status));
       if (aberta) {
-        aberta.reincidencias = (aberta.reincidencias || 0) + 1;
-        if (aberta.reincidencias + 1 >= limite && aberta.prioridade !== 'Alta') aberta.prioridade = 'Alta';
-        aberta.descricao = (aberta.descricao || '') + `\nReincidiu em ${formatarData(r.data)}` + (x.obs ? ': ' + x.obs : '');
-        aberta.atualizado_em = agora; aberta.atualizado_por = App.usuario.id || null;
-        await gravar('anomalias', aberta);
+        aberta.descricao = (aberta.descricao || '') + `\nReincidiu no check list de ${formatarData(r.data)}` + (x.obs ? ': ' + x.obs : '');
+        aberta.atualizado_em = agora;
+        await gravar('ordens_servico', aberta);
         continue;
       }
-      const prioridade = t.resultado === 'Máquina parada' && grau === 'ruim' ? 'Alta' : grau === 'ruim' ? 'Média' : 'Baixa';
-      await gravar('anomalias', {
-        id: crypto.randomUUID(), uuid_dispositivo: crypto.randomUUID(),
-        data_abertura: r.data, tipo: 'Anomalia de Check List', solicitante: r.operador || avaliador,
-        equipamento_id: e.id, local_id: e.local_id, tipo_manutencao_id: null,
-        descricao: `${g.nome} · ${it.texto}: ${x.obs || rotuloResposta(it, x.v)}`, item_texto: it.texto,
-        setor_responsavel: 'Manutenção', prioridade, procedencia: null,
-        prazo: somarDias(r.data, prioridade === 'Alta' ? 3 : prioridade === 'Média' ? 7 : 15),
-        status: 'Aberto', checklist_id: ckId, resposta_id: respId, checklist_item_id: it.id,
-        reincidencias: 0, criado_em: agora, criado_por: App.usuario.id || null,
-        atualizado_em: agora, atualizado_por: App.usuario.id || null
-      });
+      await criarCorretiva(e, problema, { checklist_id: ckId, checklist_item_id: it.id, data_emissao: r.data });
     }
   }
   for (const c of (r.fotos_gerais || []))
     await gravar('checklist_fotos', { id: crypto.randomUUID(), resposta_id: null, checklist_id: ckId, storage_path: c, legenda: 'Foto geral', enviada_em: agora });
 
-  const nAnom = q.todos('anomalias').filter(a => a.checklist_id === ckId).length;
-  aviso('Check list salvo.' + (nAnom ? ` ${nAnom} ${nAnom === 1 ? 'anomalia aberta' : 'anomalias abertas'}.` : ''));
+  const nOS = q.todos('ordens_servico').filter(o => o.checklist_id === ckId).length;
+  aviso('Check list salvo.' + (nOS ? ` ${nOS} ${nOS === 1 ? 'OS corretiva aberta' : 'OS corretivas abertas'}.` : ''));
   return ckId;
 }
 
@@ -606,7 +583,9 @@ function folhaChecklist(e, modelo, opts) {
   const grupos = versao ? gruposDaVersao(versao.id) : [];
   const respostas = preenchido ? q.todos('checklist_respostas').filter(x => x.checklist_id === ck.id) : [];
   const respDe = itemId => respostas.find(x => x.item_id === itemId) || {};
-  const anomDe = respId => q.todos('anomalias').find(a => a.resposta_id === respId);
+  // OS corretiva do item: a aberta por este check list ou a que já estava aberta (reincidência)
+  const osDe = itemId => q.todos('ordens_servico').find(o => o.tipo === 'CORRETIVA' && o.checklist_item_id === itemId
+    && o.equipamento_id === e.id && (o.checklist_id === ck.id || ['ABERTA', 'EM_EXECUCAO'].includes(o.status)));
   const unidade = e.unidade_controle === 'HODOMETRO' ? 'km' : 'h';
   const { vinculo } = modeloDaMaquina(e);
   const dias = periodicidadeDias(e, modelo, vinculo);
@@ -651,12 +630,12 @@ function folhaChecklist(e, modelo, opts) {
       .filter(({ x, it }) => ['ruim', 'medio'].includes(grauDe(it, x.resposta)));
     blocoNC = nc.length === 0
       ? '<div class="nc-ok">Nenhuma não conformidade apontada.</div>'
-      : `<table class="nc"><tr><th>Grupo</th><th>Item</th><th>Situação</th><th>Observação</th><th>Anomalia</th></tr>` +
+      : `<table class="nc"><tr><th>Grupo</th><th>Item</th><th>Situação</th><th>Observação</th><th>OS corretiva</th></tr>` +
         nc.map(({ x, it }) => {
-          const a = anomDe(x.id);
+          const a = osDe(x.item_id);
           return `<tr><td>${esc(x.grupo_texto)}</td><td><strong>${esc(x.item_texto)}</strong></td>
             <td>${esc(rotuloResposta(it, x.resposta))}</td><td>${esc(x.observacao || '')}</td>
-            <td>${a ? (a.numero ? 'Nº ' + a.numero : 'aberta') + (a.prazo ? ' · prazo ' + formatarData(a.prazo) : '') : '—'}</td></tr>`;
+            <td>${a ? (a.numero ? 'Nº ' + a.numero : 'aberta') : '—'}</td></tr>`;
         }).join('') + '</table>';
   }
 
@@ -718,7 +697,7 @@ async function abrirRelatorioChecklist(ckId) {
     // Chegou pelo link do WhatsApp em outro aparelho: busca só este check list.
     if (!App.online) return aviso('Check list não está neste aparelho e não há internet.', true);
     aviso('Buscando o check list…');
-    for (const [t, col] of [['checklists', 'id'], ['checklist_respostas', 'checklist_id'], ['checklist_fotos', 'checklist_id'], ['anomalias', 'checklist_id']]) {
+    for (const [t, col] of [['checklists', 'id'], ['checklist_respostas', 'checklist_id'], ['checklist_fotos', 'checklist_id'], ['ordens_servico', 'checklist_id']]) {
       const { data } = await App.sb.from(t).select('*').eq(col, ckId);
       if (data && data.length) {
         App.dados[t] = (App.dados[t] || []).filter(x => !data.some(d => d.id === x.id)).concat(data);
@@ -730,14 +709,14 @@ async function abrirRelatorioChecklist(ckId) {
   const e = q.por_id('equipamentos', ck.equipamento_id);
   const versao = q.por_id('checklist_versoes', ck.versao_id);
   const modelo = versao ? q.por_id('checklist_modelos', versao.modelo_id) : modeloDaMaquina(e).modelo;
-  const anomalias = q.todos('anomalias').filter(a => a.checklist_id === ckId);
+  const corretivas = q.todos('ordens_servico').filter(o => o.checklist_id === ckId);
 
   abrirModal('Check list ' + (ck.numero ? 'nº ' + ck.numero : '') + ' — ' + e.codigo, `
     <div id="os-impresso">${folhaChecklist(e, modelo, { ck })}</div>
     <div class="acoes">
       <button type="button" class="btn btn-zap" id="rc-zap"><img class="ic-zap" src="img/whatsapp.png" alt="">Enviar ao responsável</button>
       <button type="button" class="btn btn-pdf" id="rc-imprimir">Imprimir / salvar PDF</button>
-      ${anomalias.length ? '<button type="button" class="btn neutro" id="rc-anom">Ver anomalias</button>' : ''}
+      ${corretivas.length ? '<button type="button" class="btn neutro" id="rc-anom">Ver OS corretivas</button>' : ''}
     </div>
     ${ck.enviado_whatsapp_em ? `<p class="sub">Enviado em ${new Date(ck.enviado_whatsapp_em).toLocaleString('pt-BR')} para ${esc(ck.enviado_whatsapp_para || '')}.</p>` : ''}`,
   corpo => {
@@ -746,9 +725,9 @@ async function abrirRelatorioChecklist(ckId) {
       document.body.classList.add('imprimindo-os'); window.print();
       setTimeout(() => document.body.classList.remove('imprimindo-os'), 500);
     };
-    corpo.querySelector('#rc-zap').onclick = () => enviarWhatsApp(ck, e, anomalias);
+    corpo.querySelector('#rc-zap').onclick = () => enviarWhatsApp(ck, e, corretivas);
     const ba = corpo.querySelector('#rc-anom');
-    if (ba) ba.onclick = () => { fecharModal(); irPara('anomalias'); };
+    if (ba) ba.onclick = () => { fecharModal(); irPara('ordens'); };
   });
 }
 
@@ -761,15 +740,15 @@ function responsavelDe(e) {
       || lista.find(r => !r.local_id && !r.tipo_equipamento_id) || null;
 }
 
-async function enviarWhatsApp(ck, e, anomalias) {
+async function enviarWhatsApp(ck, e, corretivas) {
   if (!App.online) return aviso('O envio por WhatsApp precisa de internet.', true);
   const resp = responsavelDe(e);
   const link = location.origin + location.pathname + '?checklist=' + ck.id;
-  const nc = anomalias.map(a => '• ' + (a.item_texto || a.descricao)).slice(0, 8).join('\n');
+  const nc = corretivas.map(o => '• ' + (o.numero ? 'OS ' + o.numero + ' — ' : '') + String(o.descricao || '').split('\n')[0]).slice(0, 8).join('\n');
   const msg = `*Check list ${ck.numero ? 'nº ' + ck.numero : ''} — ${e.codigo}*\n${e.descricao}\n` +
     `${q.nome('locais', e.local_id)} · ${formatarData(ck.data_verificacao)}\n` +
     `Resultado: *${ck.resultado_geral}* (${ck.total_bom} bom · ${ck.total_medio} médio · ${ck.total_ruim} ruim)\n` +
-    (anomalias.length ? `\nNão conformidades (${anomalias.length}):\n${nc}${anomalias.length > 8 ? '\n…' : ''}\n` : '\nSem não conformidades.\n') +
+    (corretivas.length ? `\nOS corretivas abertas (${corretivas.length}):\n${nc}${corretivas.length > 8 ? '\n…' : ''}\n` : '\nSem não conformidades.\n') +
     `\nRelatório: ${link}`;
   const tel = resp && resp.telefone ? resp.telefone.replace(/\D/g, '') : '';
   const numero = tel ? (tel.length <= 11 ? '55' + tel : tel) : '';

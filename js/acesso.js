@@ -15,34 +15,15 @@
    aqui com as telas que já existem em TELAS — o menu, a tela de
    configurações e as permissões passam a enxergá-lo sozinhos. */
 const MODULOS = [
-  { id: 'manutencao', nome: 'Manutenção', telas: [
-    ['inicio', 'Painel'],
-    ['vencimentos', 'Vencimentos'],
-    ['manutencoes', 'Manutenções'],
-    ['ordens', 'Ordens de serviço'],
-    ['anomalias', 'Anomalias'],
-  ] },
-  { id: 'frota', nome: 'Frota', telas: [
-    ['equipamentos', 'Bens'],
-    ['horimetro', 'Horímetro'],
-  ] },
-  { id: 'checklist', nome: 'Check list', telas: [
-    ['checklist', 'Check list'],
-  ] },
-  { id: 'pecas', nome: 'Peças', telas: [
-    ['pecas', 'Peças'],
-    ['vinculos', 'Peças por máquina'],
-  ] },
-  /* Cadastro de máquina, tipo, plano e fornecedor muda o app inteiro para
-     todo mundo — por isso fica só para administrador. */
-  { id: 'cadastros', nome: 'Cadastros', admin: true, telas: [
-    ['cadastros', 'Cadastros'],
-  ] },
+  { id: 'maquinas',    nome: 'Máquinas',          telas: [['maquinas', 'Máquinas']] },
+  { id: 'vencimentos', nome: 'Vencimentos',       telas: [['vencimentos', 'Vencimentos']] },
+  { id: 'ordens',      nome: 'Ordens de serviço', telas: [['ordens', 'Ordens de serviço']] },
+  { id: 'checklist',   nome: 'Check list',        telas: [['checklist', 'Check list']] },
 ];
 
 /* Quem ainda não tiver módulo marcado entra com estes — assim ninguém fica
    trancado do lado de fora por esquecimento. */
-const MODULOS_PADRAO = ['manutencao', 'checklist'];
+const MODULOS_PADRAO = ['maquinas', 'vencimentos', 'ordens', 'checklist'];
 
 const Acesso = {
   admin: false,
@@ -176,13 +157,10 @@ const ICONE_ATALHO = {
   bens: '<rect x="3" y="11" width="18" height="6" rx="2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M6 11l2-5h8l2 5"/>',
 };
 const ATALHOS_INICIO = [
-  ['checklist', 'check', 'Check list', 'prim'],
-  ['inicio', 'painel', 'Painel'],
-  ['vencimentos', 'venc', 'Vencimentos'],
+  ['vencimentos', 'venc', 'Vencimentos', 'prim'],
   ['ordens', 'os', 'Ordens de serviço'],
-  ['anomalias', 'anomalia', 'Anomalias'],
-  ['horimetro', 'horimetro', 'Horímetro'],
-  ['equipamentos', 'bens', 'Bens'],
+  ['maquinas', 'bens', 'Máquinas'],
+  ['checklist', 'check', 'Check list'],
 ];
 
 TELAS.marca = el => {
@@ -280,7 +258,37 @@ function desenharConfig(el) {
         <td class="ce"><button type="button" class="btn-fantasma" data-editar="${esc(u.id)}">Editar</button></td>
       </tr>`;
     }).join('')}
-    </tbody></table></div>`;
+    </tbody></table></div>
+
+    <h2 style="margin-top:28px">Responsável pela manutenção (WhatsApp)</h2>
+    <p class="sub">Quem recebe o relatório do check list. Pode ter um por fazenda; sem fazenda vale para todas.</p>
+    <ul class="lista" id="cf-resp">${q.ativos('responsaveis_manutencao').map(r => `
+      <li><div class="info"><strong>${esc(r.nome)}</strong>
+        <small>${esc(r.telefone || 'sem telefone')} · ${r.local_id ? esc(nomeLocal(r.local_id)) : 'todas as fazendas'}</small></div>
+        <button type="button" class="btn-fantasma" data-resp="${esc(r.id)}">Editar</button></li>`).join('')
+      || '<div class="vazio"><p>Ninguém cadastrado ainda.</p></div>'}</ul>
+    <div class="acoes"><button type="button" class="btn neutro" id="cf-resp-novo">Adicionar responsável</button></div>`;
+
+  const formResp = r => {
+    const novo = !r; r = r || {};
+    abrirModal(novo ? 'Responsável pela manutenção' : 'Editar ' + r.nome, `
+      ${campoTexto('Nome', 'nome', r.nome)}
+      ${campoTexto('WhatsApp (com DDD)', 'telefone', r.telefone, 'tel', 'Ex.: 34 99999-0000')}
+      ${campoLista('Fazenda', 'local_id', q.ordenado('locais'), r.local_id, 'Todas as fazendas')}
+      <div class="acoes"><button type="button" class="btn" id="rp-ok">Salvar</button>
+        ${novo ? '' : '<button type="button" class="btn-fantasma" id="rp-tirar">Remover</button>'}</div>`, c => {
+      c.querySelector('#rp-ok').onclick = async () => {
+        const d = lerForm(c);
+        if (!d.nome || !d.telefone) return aviso('Nome e telefone são obrigatórios.', true);
+        await gravar('responsaveis_manutencao', Object.assign({}, r, d, { id: r.id || crypto.randomUUID(), ativo: true }));
+        fecharModal(); desenharConfig(el);
+      };
+      const bt = c.querySelector('#rp-tirar');
+      if (bt) bt.onclick = async () => { await inativar('responsaveis_manutencao', r.id); fecharModal(); desenharConfig(el); };
+    });
+  };
+  $('#cf-resp-novo').onclick = () => formResp(null);
+  $$('[data-resp]').forEach(b => b.onclick = () => formResp(q.por_id('responsaveis_manutencao', b.dataset.resp)));
 
   $('#cf-novo').onclick = () => abrirPessoa(null);
   $$('.cf-cx').forEach(cx => cx.onchange = () => trocarPermissao(cx, el));
@@ -397,14 +405,12 @@ function abrirPessoa(id) {
   });
 }
 
-/* O que a pessoa enxerga: o módulo e, dentro dele, as telas. Deixar todas as
-   telas desmarcadas quer dizer "o módulo inteiro" — é o caso normal. Marcar
-   uma só é o que se faz para quem vem de fora. */
+/* O que a pessoa enxerga: cada módulo é uma tela só, então basta marcar o
+   módulo. Administrador enxerga tudo. */
 function desenharPermissoes() {
   const e = editando;
+  e.telas = [];
   const temModulo = m => e.admin || (e.modulos || []).includes(m);
-  const marcada = (m, t) => (e.telas || []).includes(m + ':' + t);
-  const restrito = m => (e.telas || []).some(x => x.startsWith(m + ':'));
 
   $('#us-permissoes').innerHTML = MODULOS.map(m => `
     <div class="us-mod ${temModulo(m.id) ? '' : 'desligado'}">
@@ -412,31 +418,13 @@ function desenharPermissoes() {
         <input type="checkbox" data-mod="${m.id}" ${temModulo(m.id) ? 'checked' : ''}
           ${e.admin ? 'disabled title="Administrador enxerga tudo"' : ''}>
         <strong>${esc(m.nome)}</strong>
-        <small>${m.admin ? 'só administrador'
-          : (restrito(m.id) ? 'só as telas marcadas' : 'todas as telas')}</small>
       </label>
-      <div class="us-telas">${m.telas.map(([tid, rot]) => `
-        <label><input type="checkbox" data-mod="${m.id}" data-tela="${tid}"
-          ${marcada(m.id, tid) ? 'checked' : ''}
-          ${temModulo(m.id) && !e.admin ? '' : 'disabled'}> ${esc(rot)}</label>`).join('')}</div>
     </div>`).join('');
 
   $$('#us-permissoes input[data-mod]').forEach(cx => cx.onchange = () => {
-    const m = cx.dataset.mod;
-    if (cx.dataset.tela) {
-      const chave = m + ':' + cx.dataset.tela;
-      const lista = new Set(e.telas || []);
-      cx.checked ? lista.add(chave) : lista.delete(chave);
-      e.telas = [...lista];
-    } else {
-      const lista = new Set(e.modulos || []);
-      if (cx.checked) lista.add(m);
-      else {
-        lista.delete(m);
-        e.telas = (e.telas || []).filter(x => !x.startsWith(m + ':'));  // tirou o módulo
-      }
-      e.modulos = [...lista];
-    }
+    const lista = new Set(e.modulos || []);
+    cx.checked ? lista.add(cx.dataset.mod) : lista.delete(cx.dataset.mod);
+    e.modulos = [...lista];
     desenharPermissoes();
   });
 }

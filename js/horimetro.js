@@ -96,106 +96,8 @@ function unidadeDoBem(e) {
 
 function sufixo(u) { return u === 'HODOMETRO' ? 'km' : 'h'; }
 
-/* ---------------------------------------------------------------- TELA: HORÍMETRO */
-
-TELAS.horimetro = el => {
-  el.innerHTML = `
-    <h1>Horímetro</h1>
-    <p class="sub">A leitura da máquina é o campo <strong>Fim</strong> do lançamento mais recente.
-       Implemento não tem painel: as horas dele são a soma da coluna Quantidade, acumulada.
-       Aqui você lança na mão, corrige o que já foi lançado e importa o relatório da Realtec.</p>
-
-    <div class="acoes">
-      <button type="button" class="btn" id="hr-importar">Importar relatório Realtec</button>
-      <button type="button" class="btn neutro" id="hr-historico-geral">Últimas importações</button>
-    </div>
-
-    <div class="filtros">
-      <input type="search" id="hr-busca" placeholder="Buscar por código ou descrição">
-      <select id="hr-local"><option value="">Todos os locais</option>
-        ${q.ordenado('locais').map(l => `<option value="${esc(l.id)}">${esc(l.nome)}</option>`).join('')}
-      </select>
-      <select id="hr-tipo">
-        <option value="medidos">Só quem tem contador</option>
-        <option value="maquinas">Só máquinas (painel)</option>
-        <option value="implementos">Só implementos (acumulado)</option>
-        <option value="parados">Sem leitura há mais de 15 dias</option>
-        <option value="todos">Todos os bens</option>
-      </select>
-    </div>
-    <div id="hr-lista"></div>`;
-
-  const desenhar = () => {
-    const busca = chave($('#hr-busca').value);
-    const local = $('#hr-local').value;
-    const tipo = $('#hr-tipo').value;
-    const hoje = Date.now();
-
-    let lista = q.ativos('equipamentos').filter(e => {
-      if (local && e.local_id !== local) return false;
-      if (busca && !chave(e.codigo + ' ' + e.descricao).includes(busca)) return false;
-      const medido = e.unidade_controle && e.unidade_controle !== 'CALENDARIO';
-      if (tipo === 'medidos' && !medido) return false;
-      if (tipo === 'maquinas' && !(e.unidade_controle === 'HORIMETRO' || e.unidade_controle === 'HODOMETRO')) return false;
-      if (tipo === 'implementos' && e.unidade_controle !== 'ACUMULADO') return false;
-      if (tipo === 'parados') {
-        if (!medido) return false;
-        const d = e.leitura_data || e.ultimo_uso_data;
-        if (d && (hoje - new Date(d + 'T00:00:00')) < 15 * 86400000) return false;
-      }
-      return true;
-    }).sort((a, b) => a.codigo.localeCompare(b.codigo, 'pt-BR', { numeric: true }));
-
-    const atrasados = lista.filter(e => {
-      const d = e.leitura_data || e.ultimo_uso_data;
-      return !d || (hoje - new Date(d + 'T00:00:00')) >= 15 * 86400000;
-    }).length;
-
-    $('#hr-lista').innerHTML = `
-      <div class="painel">
-        <div class="cartao"><b>${lista.length}</b><span>bens na lista</span></div>
-        <div class="cartao ${atrasados ? 'alerta' : ''}"><b>${atrasados}</b>
-          <span>sem marcação há 15 dias ou mais</span></div>
-      </div>
-      ${lista.length === 0 ? '<div class="vazio"><p>Nenhum bem com esses filtros.</p></div>' : `
-      <table class="tabela"><thead><tr>
-        <th>Código</th><th>Descrição</th><th>Contador</th>
-        <th class="num">Leitura atual</th><th class="num">Última marcação</th><th></th>
-      </tr></thead><tbody>` + lista.map(e => {
-        const u = unidadeDoBem(e);
-        const leitura = leituraDe(e);
-        const data = e.unidade_controle === 'ACUMULADO' ? e.ultimo_uso_data : e.leitura_data;
-        const velha = !data || (hoje - new Date(data + 'T00:00:00')) >= 15 * 86400000;
-        return `<tr>
-          <td class="codigo">${esc(e.codigo)}</td>
-          <td>${esc(e.descricao)}</td>
-          <td>${esc(rotuloUnidade(e.unidade_controle))}</td>
-          <td class="num"><strong>${numBR(leitura)}</strong> ${sufixo(u)}</td>
-          <td class="num">${data ? formatarData(data) : '<span class="etq atencao">nunca</span>'}
-              ${data && velha ? ' <span class="etq atencao">atrasada</span>' : ''}</td>
-          <td>
-            <button type="button" class="btn-fantasma" data-lancar="${esc(e.id)}">
-              ${e.unidade_controle === 'ACUMULADO' ? 'Ajustar' : 'Lançar'}</button>
-            <button type="button" class="btn-fantasma" data-hist="${esc(e.id)}">Histórico</button>
-          </td>
-        </tr>`;
-      }).join('') + '</tbody></table>'}`;
-
-    $('#hr-lista').querySelectorAll('[data-lancar]').forEach(b => b.onclick = () => {
-      const e = q.por_id('equipamentos', b.dataset.lancar);
-      if (e.unidade_controle === 'ACUMULADO') formAjusteContador(e); else formLeitura(e);
-    });
-    $('#hr-lista').querySelectorAll('[data-hist]').forEach(b =>
-      b.onclick = () => historicoLeituras(b.dataset.hist));
-  };
-
-  ['hr-busca', 'hr-local', 'hr-tipo'].forEach(id => {
-    const e = document.getElementById(id); e.oninput = desenhar; e.onchange = desenhar;
-  });
-  $('#hr-importar').onclick = telaImportarRealtec;
-  $('#hr-historico-geral').onclick = historicoImportacoes;
-  desenhar();
-};
+/* A lista de contadores agora fica na tela Máquinas (js/maquinas.js).
+   Aqui ficam só o lançamento, a correção e a importação. */
 
 /* ---------------------------------------------------------------- lançar leitura */
 
@@ -287,18 +189,14 @@ async function salvarLeitura(e, d, valor, troca, acumuladoAnterior, aoSalvar) {
       </div>`, c => {
       c.querySelector('#tr-depois').onclick = fecharModal;
       c.querySelector('#tr-planos').onclick = () => {
-        fecharModal(); irPara('planos');
-        setTimeout(() => {
-          const s = document.querySelector('#pl-maquina');
-          if (s) { s.value = e.id; s.dispatchEvent(new Event('change')); }
-        }, 30);
+        fecharModal(); fichaMaquina(e.id);
       };
     });
   } else {
     aviso(App.online ? 'Leitura lançada e vencimentos recalculados.'
                      : 'Salva no aparelho. Sobe quando a internet voltar.');
   }
-  if (aoSalvar) aoSalvar(); else if (TELAS.horimetro) irPara('horimetro');
+  if (aoSalvar) aoSalvar(); else irPara('maquinas');
 }
 
 /* ---------------------------------------------------------------- ajuste de implemento */
@@ -346,7 +244,7 @@ function formAjusteContador(e) {
       const mud = {}; mud[campo === 'km' ? 'ajuste_km' : 'ajuste_horas'] = novo - base;
       await gravarBem(e, mud, campo === 'km' ? { km: novo } : { horas: novo });
 
-      fecharModal(); irPara('horimetro');
+      fecharModal(); irPara('maquinas');
       aviso('Contador ajustado para ' + numBR(novo) + ' ' + sufixo(u) + '.');
     };
   });
@@ -885,7 +783,7 @@ async function gravarImportacao(alvo, ctx, r) {
         <button type="button" class="btn" id="fi-vencimentos">Ver o painel de vencimentos</button>
         <button type="button" class="btn neutro" id="fi-fechar">Fechar</button>
       </div>`;
-    alvo.querySelector('#fi-fechar').onclick = () => { fecharModal(); irPara('horimetro'); };
+    alvo.querySelector('#fi-fechar').onclick = () => { fecharModal(); irPara('maquinas'); };
     alvo.querySelector('#fi-vencimentos').onclick = () => { fecharModal(); irPara('vencimentos'); };
 
   } catch (e) {
