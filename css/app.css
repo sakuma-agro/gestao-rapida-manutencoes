@@ -867,3 +867,67 @@ body.sem-rodape .conteudo{padding-bottom:24px}
 .btn.btn-zap .ic-zap{width:26px;height:26px;flex:none;border-radius:6px;background:#fff;display:block}
 .btn.btn-pdf{background:#ECEDE8;color:var(--cinza);border:1px solid #D3D5CD}
 .btn.btn-pdf:hover{background:#E1E3DC}
+
+/* =====================================================================
+   APP SIMPLIFICADO (08/10/2026) — Máquinas, Vencimentos, OS
+   ===================================================================== */
+.tabela small,.lista small{display:block;font-size:12.5px;color:var(--cinza-claro);margin-top:2px}
+.tabela td .etq + small{margin-top:4px}
+.mq-tabela tbody tr,.clicavel{cursor:pointer}
+.clicavel:hover{background:#FAFBF7}
+.mq-leitura small{font-size:12px}
+.falta{color:var(--vencido);font-style:italic;font-size:13px}
+.fm-usa,.os-usa{font-size:14px;white-space:pre-line;max-width:280px}
+.os-usa{font-weight:bold;color:var(--cinza)}
+
+/* cabeçalho da ficha da máquina */
+.mq-cab{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:6px}
+.mq-cab div{background:var(--fundo);border-radius:var(--raio);padding:10px 12px}
+.mq-cab span{display:block;font-size:12px;color:var(--cinza-claro)}
+.mq-cab b{display:block;font-size:16px;color:var(--cinza)}
+.mq-cab small{font-size:12px;color:var(--cinza-claro)}
+.fm-titulo{display:flex;align-items:center;gap:12px;justify-content:space-between;
+  font-size:17px;color:var(--marrom);margin:22px 0 10px;border-bottom:2px solid var(--verde);padding-bottom:6px}
+.fm-titulo .btn{min-height:38px;padding:0 14px;font-size:14px}
+
+/* vencimentos: a borda conta a situação, além da etiqueta */
+.vc-tabela tbody tr{border-left:5px solid var(--linha)}
+.vc-tabela tbody tr.st-vencido td:first-child{box-shadow:inset 5px 0 0 var(--urgente)}
+.vc-tabela tbody tr.st-atencao td:first-child{box-shadow:inset 5px 0 0 var(--atencao)}
+.vc-tabela tbody tr.st-ok td:first-child{box-shadow:inset 5px 0 0 var(--ok)}
+.vc-tabela .codigo{font-weight:bold}
+.vc-acao{white-space:nowrap;text-align:right}
+.vc-acao .btn{min-height:42px;padding:0 16px}
+
+/* OS */
+.os-topo{justify-content:space-between}
+.os-num{text-align:right}
+.os-num span{display:block;font-size:12px;letter-spacing:.08em;color:var(--marrom);font-weight:bold}
+.os-num b{display:block;font-size:22px;color:var(--cinza)}
+.os-id td:nth-child(odd){color:var(--cinza-claro);font-size:13px;width:16%}
+.os-sec{font-size:14px;color:var(--marrom);margin:16px 0 6px;letter-spacing:.03em;text-transform:uppercase}
+.os-itens .c{text-align:center}
+.os-problema{border:1px solid var(--linha);border-left:4px solid var(--vencido);border-radius:var(--raio);
+  padding:12px;white-space:pre-line;font-size:15px;background:var(--branco)}
+.os-origem{font-size:12.5px;color:var(--cinza-claro);margin:6px 0 0}
+.os-manual td{font-size:12.5px;color:var(--cinza-claro)}
+.os-manual td strong{font-size:15px;color:var(--cinza)}
+.ff-item{display:flex;align-items:center;gap:10px;min-height:var(--toque);font-size:16px}
+.ff-item input{width:22px;height:22px}
+
+@media (max-width:760px){
+  /* no celular a tabela vira cartão */
+  .vc-tabela thead,.mq-tabela thead{display:none}
+  .vc-tabela,.vc-tabela tbody,.vc-tabela tr,.vc-tabela td,
+  .mq-tabela,.mq-tabela tbody,.mq-tabela tr,.mq-tabela td{display:block;width:100%}
+  .vc-tabela tr,.mq-tabela tr{border:1px solid var(--linha);border-radius:var(--raio);margin-bottom:10px;padding:6px 4px;background:var(--branco)}
+  .vc-tabela td,.mq-tabela td{border:0;padding:4px 10px}
+  .mq-tabela .num{text-align:left}
+  .vc-acao{text-align:left}
+  .vc-acao .btn{width:100%}
+  .fm-usa{max-width:none}
+}
+@media print{
+  .os-num b{font-size:16pt}
+  .os-itens,.os-manual{break-inside:avoid}
+}
